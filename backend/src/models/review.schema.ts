@@ -1,0 +1,2 @@
+import { modelSchema } from './base.js'
+export const ReviewSchema = modelSchema({ id:{type:String,required:true}, astrologerId:{type:String,required:true}, userId:{type:String,required:true}, rating:{type:Number,min:1,max:5,required:true}, comment:{type:String,required:true}, astrologerReply:{type:String,default:null}, isVisible:{type:Boolean,required:true}, createdAt:{type:String,required:true}, sessionId:String })

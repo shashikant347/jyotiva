@@ -1,0 +1,2 @@
+import { modelSchema } from './base.js'
+export const BirthProfileSchema = modelSchema({ id: {type:String,required:true}, userId: {type:String,required:true}, name: {type:String,required:true}, gender: {type:String,enum:['male','female','other'],required:true}, birthDate: {type:String,required:true}, birthTime: {type:String,default:null}, birthPlace: {type:String,required:true}, latitude: {type:Number,default:null}, longitude: {type:Number,default:null}, timezone: {type:String,required:true}, isPrimary: {type:Boolean,required:true}, createdAt: {type:String,required:true} })

@@ -1,6 +1,7 @@
 export type Language = 'en' | 'hi'
 export type ThemeMode = 'light' | 'dark' | 'auto'
 export type Gender = 'male' | 'female' | 'other'
+export type AdminRole = 'super_admin' | 'support' | 'content' | 'finance'
 
 export interface User {
   id: string
@@ -12,6 +13,8 @@ export interface User {
   language: Language
   theme: ThemeMode
   role: 'user' | 'astrologer' | 'admin'
+  adminRole?: AdminRole | null
+  status?: 'active' | 'suspended'
   freeChatUsed: boolean
   createdAt: string
 }

@@ -1,0 +1,2 @@
+import { modelSchema } from './base.js'
+export const RefreshTokenSchema = modelSchema({ id: {type:String,required:true}, userId: {type:String,required:true}, familyId: {type:String,required:true}, tokenHash: {type:String,required:true}, device: {type:String,required:true}, ip: {type:String,required:true}, createdAt: {type:Number,required:true}, expiresAt: {type:Number,required:true}, revokedAt: {type:Number,default:null} })

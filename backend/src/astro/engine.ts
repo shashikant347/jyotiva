@@ -58,7 +58,7 @@ export function lahiriAyanamsa(jd: number): number {
 }
 
 /** Tropical (true equinox of date) ecliptic longitude of a geocentric body. */
-function tropicalLongitude(name: string, date: Date): number {
+export function tropicalLongitude(name: string, date: Date): number {
   const t = A.MakeTime(date)
   const vec = name === 'Moon' ? A.GeoMoon(t) : A.GeoVector(BODY[name], t, true)
   const ect = A.RotateVector(A.Rotation_EQJ_ECT(t), vec)
@@ -71,7 +71,7 @@ function meanNode(jd: number): number {
   return norm(125.0445479 - 1934.1362891 * T + 0.0020754 * T * T)
 }
 
-function siderealLongitude(name: PlanetName, date: Date): number {
+export function siderealLongitude(name: PlanetName, date: Date): number {
   const jd = julianDay(date)
   const ay = lahiriAyanamsa(jd)
   if (name === 'Rahu') return norm(meanNode(jd) - ay)

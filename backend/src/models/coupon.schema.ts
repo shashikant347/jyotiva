@@ -1,0 +1,2 @@
+import { modelSchema } from './base.js'
+export const CouponSchema = modelSchema({ code:{type:String,required:true}, type:{type:String,enum:['percent','flat'],required:true}, value:{type:Number,required:true}, minAmountPaise:{type:Number,required:true}, maxBonusPaise:{type:Number,required:true}, validFrom:{type:String,required:true}, validTo:{type:String,required:true}, usageLimit:{type:Number,required:true}, usedCount:{type:Number,required:true}, active:{type:Boolean,required:true} })

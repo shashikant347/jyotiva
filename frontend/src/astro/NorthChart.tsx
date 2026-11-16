@@ -1,4 +1,4 @@
-import type { KundliResult } from './types'
+import type { DivisionalChart } from './types'
 
 const ABBR: Record<string, string> = { Sun: 'Su', Moon: 'Mo', Mars: 'Ma', Mercury: 'Me', Jupiter: 'Ju', Venus: 'Ve', Saturn: 'Sa', Rahu: 'Ra', Ketu: 'Ke' }
 
@@ -9,7 +9,7 @@ const POS: [number, number, number, number][] = [
   [200, 310, 200, 345], [300, 360, 300, 390], [360, 300, 330, 330], [300, 200, 270, 200], [360, 100, 330, 130], [300, 40, 300, 70],
 ]
 
-export default function NorthChart({ k, label }: { k: KundliResult['kundli']; label: string }) {
+export default function NorthChart({ k, label }: { k: Pick<DivisionalChart, 'houses'>; label: string }) {
   return (
     <svg viewBox="0 0 400 400" className="chart" role="img" aria-label={label}>
       <rect x="2" y="2" width="396" height="396" fill="none" stroke="currentColor" strokeWidth="2" />

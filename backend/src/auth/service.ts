@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { config } from '../config.js'
+import { hasOpenSession, phoneKey } from '../sessions/service.js'
 import { HttpError } from '../errors.js'
 import { sendSms } from '../sms.js'
 import { getDb, newId, save, type Language, type ThemeMode, type User } from '../store.js'
@@ -75,8 +76,20 @@ export async function verifyOtp(
   const isNewUser = !user
   if (!user) {
     const iso = new Date(now).toISOString()
-    user = { id: newId(), phone, email: null, name: '', gender: null, photoUrl: null, language: initial.language ?? 'en', theme: initial.theme ?? 'auto', role: 'user', freeChatUsed: false, createdAt: iso, updatedAt: iso, deletedAt: null }
+    user = { id: newId(), phone, email: null, name: '', gender: null, photoUrl: null, language: initial.language ?? 'en', theme: initial.theme ?? 'auto', role: 'user', status: 'active', freeChatUsed: false, createdAt: iso, updatedAt: iso, deletedAt: null }
     db.users.push(user)
+  }
+  if (user.status === 'suspended') {
+    save()
+    throw new HttpError(403, 'ACCOUNT_SUSPENDED', 'This account is suspended. Contact support for assistance.')
+  }
+  const shouldBeAdmin = config.adminPhones.includes(phone)
+  if (shouldBeAdmin) {
+    user.role = 'admin'
+    user.adminRole ??= 'super_admin'
+  } else if (user.role === 'admin') {
+    user.role = 'user'
+    delete user.adminRole
   }
   const session = issueSession(user, ctx, newId())
   return { ...session, isNewUser }
@@ -110,7 +123,7 @@ export function refresh(token: string, ctx: ClientCtx): Session {
     throw new HttpError(401, 'REFRESH_REUSED', 'Session expired. Please sign in again.')
   }
   if (rec.expiresAt <= now) throw new HttpError(401, 'INVALID_REFRESH', 'Session expired. Please sign in again.')
-  const user = db.users.find(u => u.id === rec.userId && !u.deletedAt)
+  const user = db.users.find(u => u.id === rec.userId && !u.deletedAt && u.status !== 'suspended')
   if (!user) throw new HttpError(401, 'INVALID_REFRESH', 'Session expired. Please sign in again.')
   rec.revokedAt = now
   return issueSession(user, ctx, rec.familyId)
@@ -130,9 +143,20 @@ export function deleteAccount(userId: string): void {
   const db = getDb()
   const user = db.users.find(u => u.id === userId)
   if (!user) return
+  const wallet = db.wallets.find(w => w.userId === userId)
+  if (wallet && wallet.balancePaise > 0) throw new HttpError(409, 'WALLET_BALANCE', 'Your wallet still has money in it. Use it, or contact support for a refund, before deleting your account.')
+  if (hasOpenSession(userId)) throw new HttpError(409, 'SESSION_OPEN', 'Finish your current chat before deleting your account.')
+  if (user.freeChatUsed && !db.freeChatPhones.includes(phoneKey(user.phone))) db.freeChatPhones.push(phoneKey(user.phone)) // so re-registering does not give a second free chat
   db.birthProfiles = db.birthProfiles.filter(b => b.userId !== userId)
+  db.savedKundlis = db.savedKundlis.filter(k => k.userId !== userId)
   db.refreshTokens = db.refreshTokens.filter(t => t.userId !== userId)
+  db.availabilityWatches = db.availabilityWatches.filter(w => w.userId !== userId)
+  db.notifications = db.notifications.filter(n => n.userId !== userId)
+  db.webPushSubscriptions = db.webPushSubscriptions.filter(s => s.userId !== userId)
   db.otps = db.otps.filter(o => o.phone !== user.phone)
+  const ticketIds = new Set(db.supportTickets.filter(t => t.userId === userId).map(t => t.id))
+  db.supportTickets = db.supportTickets.filter(t => t.userId !== userId)
+  db.supportMessages = db.supportMessages.filter(m => !ticketIds.has(m.ticketId))
   Object.assign(user, { phone: `deleted:${user.id}`, email: null, name: '', gender: null, photoUrl: null, deletedAt: new Date().toISOString() })
   save()
 }

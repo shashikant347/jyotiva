@@ -11,6 +11,7 @@ const LABELS: Record<string, string> = {
   'notification': 'Notifications',
   'my-wallet': 'Wallet',
   'customer-support': 'Customer Support Chat',
+  'free-astrology-chat': 'Free Astrology Chat',
 }
 
 export const segmentLabel = (seg: string): string => LABELS[seg] ?? STATIC_DOCS[seg]?.title ?? titleCase(seg)

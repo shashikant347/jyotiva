@@ -1,4 +1,6 @@
 import * as A from 'astronomy-engine'
+import { computeKundli, doshas, tzOffsetHours, vimshottari, type BirthInput } from './engine.js'
+import { SIGNS } from './data.js'
 
 const letters = (s: string): string => s.toUpperCase().replace(/[^A-Z]/g, '')
 const digitSum = (n: number): number => String(Math.abs(n)).split('').reduce((a, c) => a + Number(c), 0)
@@ -17,6 +19,50 @@ export function nameNumber(name: string) {
 }
 
 export class CalcError extends Error {}
+
+function birthInput(b: { birthDate: string; birthTime?: string | null; latitude: number; longitude: number; timezone: string }): BirthInput {
+  const time = b.birthTime ?? '12:00'
+  return { date: b.birthDate, time, tzOffset: tzOffsetHours(b.timezone, b.birthDate, time), lat: b.latitude, lon: b.longitude }
+}
+
+/** Shared, transparent calculations for the birth-detail tools. */
+export function birthSummary(b: { birthDate: string; birthTime?: string | null; latitude: number; longitude: number; timezone: string }, kind: string) {
+  const input = birthInput(b)
+  const k = computeKundli(input)
+  const moon = k.planets.find(p => p.name === 'Moon')!
+  const warning = b.birthTime ? [] : ['Birth time is unknown; noon was used. Ascendant and house-based results may be unreliable.']
+  if (kind === 'sun') {
+    const sun = k.planets.find(p => p.name === 'Sun')!
+    return { sign: sun.signName, longitude: sun.longitude, system: 'Sidereal (Lahiri)', warnings: warning }
+  }
+  if (kind === 'ascendant') return { sign: k.ascendant.signName, degree: k.ascendant.degree, system: 'Sidereal (Lahiri)', warnings: warning }
+  if (kind === 'moon') return { sign: moon.signName, degree: moon.degree, system: 'Sidereal (Lahiri)', warnings: warning }
+  if (kind === 'nakshatra') return { nakshatra: moon.nakshatraName, pada: moon.pada, moonSign: moon.signName, warnings: warning }
+  if (kind === 'dasha') return { periods: vimshottari(moon.longitude, new Date(k.utc)), warnings: warning }
+  if (kind === 'chart') return { ascendant: k.ascendant, planets: k.planets, houses: k.houses, ayanamsa: k.ayanamsa, warnings: warning }
+  const report = doshas(k)
+  if (kind === 'mangal') return { ...report.mangal, warnings: warning }
+  if (kind === 'sade-sati') return { ...report.sadeSati, warnings: warning }
+  if (kind === 'kaal-sarp') return { ...report.kaalSarp, warnings: warning }
+  if (kind === 'karaka' || kind === 'ishta') {
+    const seven = k.planets.filter(p => ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'].includes(p.name)).sort((x, y) => y.degree - x.degree)
+    const atma = seven[0], dara = seven[6]
+    if (kind === 'karaka') return { atmakaraka: { planet: atma.name, sign: atma.signName, degree: atma.degree }, darakaraka: { planet: dara.name, sign: dara.signName, degree: dara.degree }, method: 'Seven classical planets ranked by degrees within their signs; traditions may differ.', warnings: warning }
+    const navamsaSign = (p: typeof atma) => {
+      const part = Math.min(8, Math.floor(p.degree / (30 / 9)))
+      const modalityStart = p.sign % 3 === 0 ? p.sign : p.sign % 3 === 1 ? (p.sign + 8) % 12 : (p.sign + 4) % 12
+      return SIGNS[(modalityStart + part) % 12]
+    }
+    return { atmakaraka: atma.name, karakamsha: navamsaSign(atma), twelfthFromKarakamsha: SIGNS[(SIGNS.indexOf(navamsaSign(atma)) + 11) % 12], note: 'This gives the Jaimini chart factors only. A specific Ishta Devata requires a tradition-specific deity mapping, so no deity is inferred here.', warnings: warning }
+  }
+  throw new CalcError('Unknown birth calculation')
+}
+
+export function transitChart(b: { birthDate: string; birthTime?: string | null; latitude: number; longitude: number; timezone: string }, transitDate: string) {
+  const natal = computeKundli(birthInput(b))
+  const transit = computeKundli({ ...birthInput(b), date: transitDate, time: '12:00', tzOffset: tzOffsetHours(b.timezone, transitDate, '12:00') })
+  return { transitDate, planets: transit.planets.map(p => ({ name: p.name, sign: p.signName, degree: p.degree, houseFromNatalAscendant: ((p.sign - natal.ascendant.sign + 12) % 12) + 1, retrograde: p.retrograde })), system: 'Sidereal (Lahiri), noon local time for transit date', warnings: b.birthTime ? [] : ['Birth time is unknown; house positions from the natal ascendant are unreliable.'] }
+}
 
 const parseDate = (s: string): { y: number; m: number; d: number } => {
   const [y, m, d] = s.split('-').map(Number)
@@ -79,8 +125,13 @@ function wordScore(a: string, b: string, word: string): number {
   let counts = word.split('').map(c => all.split('').filter(x => x === c).length)
   while (counts.length > 2) {
     const next: number[] = []
-    for (let i = 0; i < counts.length - 1; i++) next.push(counts[i] + counts[i + 1])
-    counts = next.flatMap(n => (n > 9 ? [Math.floor(n / 10), n % 10] : [n]))
+    for (let i = 0; i < counts.length - 1; i++) {
+      const sum = counts[i] + counts[i + 1]
+      if (sum > 9) next.push(Math.floor(sum / 10), sum % 10)
+      else next.push(sum)
+      if (next.length > 1024) throw new CalcError('These names are too repetitive to calculate a score')
+    }
+    counts = next
     if (counts.length <= 2) break
   }
   const s = Number(counts.join('')) || 0

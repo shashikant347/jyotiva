@@ -30,6 +30,7 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     res.status(status).json({ success: false, error: { code: status === 413 ? 'TOO_LARGE' : 'BAD_JSON', message: 'Invalid request body' } })
     return
   }
-  console.error(err)
-  res.status(500).json({ success: false, error: { code: 'INTERNAL', message: 'Something went wrong' } })
+  const requestId = String(res.locals.requestId ?? 'unknown')
+  console.error(`[request ${requestId}]`, err)
+  res.status(500).json({ success: false, error: { code: 'INTERNAL', message: 'Something went wrong', requestId } })
 }

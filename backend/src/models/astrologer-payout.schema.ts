@@ -1,0 +1,2 @@
+import { modelSchema } from './base.js'
+export const AstrologerPayoutSchema = modelSchema({ id: { type: String, required: true }, astrologerId: { type: String, required: true }, amountPaise: { type: Number, required: true }, status: { type: String, enum: ['requested', 'approved', 'rejected', 'paid'], required: true }, requestedAt: { type: String, required: true }, reviewedAt: { type: String, default: null }, paidAt: { type: String, default: null }, reference: { type: String, default: null } })

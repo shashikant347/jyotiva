@@ -40,6 +40,11 @@ test('love and friendship scores are deterministic and in range', () => {
   assert.ok(c.friendship('Ram', 'Shyam').percent <= 100)
 })
 
+test('friendship calculator rejects repetitive names before score expansion can grow without bound', () => {
+  const first = 'F'.repeat(9) + 'R'.repeat(9) + 'I'.repeat(9) + 'E'.repeat(9) + 'N'.repeat(9) + 'D'.repeat(9) + 'S'.repeat(6)
+  assert.throws(() => c.friendship(first, 'S'.repeat(3)), c.CalcError)
+})
+
 test('age', () => {
   const r = c.age('1990-05-29', new Date('2026-11-13T00:00:00Z'))
   assert.deepEqual([r.years, r.months, r.days], [36, 5, 15])

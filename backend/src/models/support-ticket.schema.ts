@@ -1,0 +1,2 @@
+import { modelSchema } from './base.js'
+export const SupportTicketSchema = modelSchema({ id:{type:String,required:true}, userId:{type:String,required:true}, category:{type:String,enum:['payment','chat','astrologer','account','other'],required:true}, subject:{type:String,required:true}, status:{type:String,enum:['open','pending','resolved'],required:true}, relatedSessionId:{type:String,default:null}, createdAt:{type:String,required:true}, updatedAt:{type:String,required:true} })

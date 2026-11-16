@@ -1,0 +1,2 @@
+import { modelSchema } from './base.js'
+export const WalletTxSchema = modelSchema({ id:{type:String,required:true}, userId:{type:String,required:true}, type:{type:String,enum:['recharge','bonus','debit','refund','adjustment'],required:true}, amountPaise:{type:Number,required:true}, balanceAfterPaise:{type:Number,required:true}, referenceType:{type:String,enum:['payment','session','admin'],required:true}, referenceId:{type:String,required:true}, note:{type:String,required:true}, createdAt:{type:String,required:true} })

@@ -2,6 +2,11 @@ export interface PlaceHit { name: string; state: string; latitude: number; longi
 export interface Birth { name: string; birthDate: string; birthTime: string | null; latitude: number; longitude: number; timezone: string }
 export interface PlanetPos { name: string; longitude: number; sign: number; signName: string; degree: number; nakshatraName: string; pada: number; retrograde: boolean; house: number }
 export interface DashaPeriod { lord: string; start: string; end: string; sub?: DashaPeriod[] }
+export interface DivisionalChart {
+  varga: number; name: string; ascendant: { sign: number; signName: string }
+  planets: { name: string; sign: number; signName: string; house: number }[]
+  houses: { house: number; sign: number; signName: string; planets: string[] }[]
+}
 export interface KundliResult {
   name: string | null
   timeUnknown: boolean
@@ -11,6 +16,7 @@ export interface KundliResult {
     ascendant: { sign: number; signName: string; degree: number; nakshatraName: string; pada: number }
     planets: PlanetPos[]
     houses: { house: number; sign: number; signName: string; planets: string[] }[]
+    divisionalCharts?: DivisionalChart[]
   }
   moon: { signName: string; nakshatraName: string; pada: number }
   dasha: DashaPeriod[]

@@ -1,13 +1,17 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import BirthFields, { emptyBirth, toPayload, validateBirth, type BirthState } from '../astro/BirthFields'
 import NorthChart from '../astro/NorthChart'
-import type { DashaPeriod, KundliResult } from '../astro/types'
+import SouthChart from '../astro/SouthChart'
+import type { DashaPeriod, DivisionalChart, KundliResult } from '../astro/types'
 import { usePageMeta } from '../hooks'
 import { api, isApiError } from '../services/api'
 import { fieldErrors } from '../utils'
+import { useAuth } from '../context/AuthContext'
 
 const fmtDeg = (d: number) => `${Math.floor(d)}° ${String(Math.floor((d % 1) * 60)).padStart(2, '0')}′`
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+interface SavedKundli { id: string; name: string; birthDate: string; birthTime: string | null; latitude: number; longitude: number; timezone: string; createdAt: string }
 
 function Dasha({ list }: { list: DashaPeriod[] }) {
   const now = Date.now()
@@ -33,12 +37,37 @@ function Dasha({ list }: { list: DashaPeriod[] }) {
 }
 
 export default function FreeKundli() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
   usePageMeta('Free Kundli (Janam Kundali)', { description: 'Generate your free Vedic Kundli: birth chart, planetary positions, Vimshottari dasha and dosha checks.' })
   const [b, setB] = useState<BirthState>(emptyBirth())
   const [errs, setErrs] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [res, setRes] = useState<KundliResult | null>(null)
+  const [varga, setVarga] = useState(1)
+  const [chartStyle, setChartStyle] = useState<'north' | 'south'>('north')
+  const [saved, setSaved] = useState<SavedKundli[]>([])
+  const [saveMsg, setSaveMsg] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (!user) { setSaved([]); return }
+    api<SavedKundli[]>('/me/kundlis').then(setSaved).catch(() => setSaved([]))
+  }, [user])
+
+  useEffect(() => {
+    if (!id || !user) return
+    let live = true
+    setBusy(true); setMsg('')
+    api<SavedKundli>(`/me/kundlis/${encodeURIComponent(id)}`)
+      .then(k => api<KundliResult>('/tools/kundli', { method: 'POST', body: k, auth: false }))
+      .then(k => { if (live) setRes(k) })
+      .catch(e => { if (live) { setRes(null); setMsg(isApiError(e) ? e.message : 'Could not load the saved Kundli.') } })
+      .finally(() => { if (live) setBusy(false) })
+    return () => { live = false }
+  }, [id, user])
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -55,7 +84,27 @@ export default function FreeKundli() {
     } finally { setBusy(false) }
   }
 
+  async function saveKundli() {
+    if (!user || !b.place || !b.date) return
+    setSaving(true); setSaveMsg('')
+    const payload = { ...toPayload(b), name: b.name.trim() || user.name || 'My Kundli' }
+    try {
+      const item = await api<SavedKundli>('/me/kundlis', { method: 'POST', body: payload })
+      setSaved(xs => [item, ...xs]); setSaveMsg('Kundli saved to your account.')
+    } catch (e) { setSaveMsg(isApiError(e) ? e.message : 'Could not save this Kundli.') }
+    finally { setSaving(false) }
+  }
+
+  async function deleteKundli(item: SavedKundli) {
+    try {
+      await api(`/me/kundlis/${encodeURIComponent(item.id)}`, { method: 'DELETE' })
+      setSaved(xs => xs.filter(x => x.id !== item.id))
+      if (id === item.id) navigate('/freekundli')
+    } catch (e) { setSaveMsg(isApiError(e) ? e.message : 'Could not delete this Kundli.') }
+  }
+
   const asc = res?.kundli.ascendant
+  const selectedChart: DivisionalChart | undefined = res?.kundli.divisionalCharts?.find(c => c.varga === varga)
   return (
     <section className="wrap sec">
       <h1 className="page-h">Free Kundli</h1>
@@ -65,22 +114,32 @@ export default function FreeKundli() {
           <BirthFields value={b} onChange={setB} errors={errs} />
           {msg && <p className="alert" role="alert">{msg}</p>}
           <button className="btn btn-gold" disabled={busy}>{busy ? 'Calculating…' : 'Generate Kundli'}</button>
+          {!user && <p className="muted small">Sign in to save Kundlis to your account. <Link to="/login">Sign in</Link></p>}
+          {user && <div className="saved-kundlis"><h2>Saved Kundlis</h2>{saved.length ? <ul className="bp-list">{saved.map(item => <li className="bp-row" key={item.id}><div><Link to={`/freekundli/result/${item.id}`}><b>{item.name}</b></Link><p className="muted small">{item.birthDate} · Saved {fmtDate(item.createdAt)}</p></div><button type="button" className="linkish danger" onClick={() => void deleteKundli(item)}>Delete</button></li>)}</ul> : <p className="empty">No saved Kundlis yet.</p>}</div>}
         </form>
 
-        <div className="results" aria-live="polite">
+        <div className="results" id="kundli-report" aria-live="polite">
           {!res && <div className="panel"><p className="empty">Your chart will appear here.</p></div>}
           {res && asc && (
             <>
               <div className="panel">
                 <h2>{res.name ? `${res.name}'s Kundli` : 'Your Kundli'}</h2>
+                <button type="button" className="btn btn-gold no-print" onClick={() => window.print()}>Print / Save as PDF</button>
+                {!id && user && <button type="button" className="btn no-print" onClick={() => void saveKundli()} disabled={saving}>{saving ? 'Saving…' : 'Save Kundli'}</button>}
+                {saveMsg && <p className="notice no-print" role="status">{saveMsg}</p>}
+                {id && <Link className="linkish no-print" to="/freekundli">Generate another Kundli</Link>}
                 {res.warnings.map(w => <p key={w} className="notice">{w}</p>)}
                 <div className="summary">
                   <div><span className="muted small">Lagna (ascendant)</span><b>{asc.signName} {fmtDeg(asc.degree)}</b></div>
                   <div><span className="muted small">Moon sign (Rashi)</span><b>{res.moon.signName}</b></div>
                   <div><span className="muted small">Nakshatra</span><b>{res.moon.nakshatraName}, pada {res.moon.pada}</b></div>
                 </div>
-                <NorthChart k={res.kundli} label={`North Indian birth chart, ${asc.signName} ascendant`} />
-                <p className="muted small">North Indian style. The number in each house is the zodiac sign (1 = Aries … 12 = Pisces).</p>
+                <div className="row2">
+                  <div className="field"><label htmlFor="varga-select">Chart</label><select id="varga-select" value={varga} onChange={e => setVarga(Number(e.target.value))}>{res.kundli.divisionalCharts?.map(c => <option key={c.varga} value={c.varga}>{c.name}</option>)}</select></div>
+                  <div className="field"><label htmlFor="chart-style">Chart style</label><select id="chart-style" value={chartStyle} onChange={e => setChartStyle(e.target.value as 'north' | 'south')}><option value="north">North Indian</option><option value="south">South Indian</option></select></div>
+                </div>
+                {selectedChart && (chartStyle === 'north' ? <NorthChart k={selectedChart} label={`${selectedChart.name} North Indian chart, ${selectedChart.ascendant.signName} ascendant`} /> : <SouthChart chart={selectedChart} label={`${selectedChart.name} South Indian chart, ${selectedChart.ascendant.signName} ascendant`} />)}
+                <p className="muted small">Divisional placements use common Parashari sign allocation rules. Traditions may differ; verify important charts with a trusted reference.</p>
               </div>
 
               <div className="panel">

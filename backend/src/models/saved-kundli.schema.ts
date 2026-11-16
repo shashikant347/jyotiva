@@ -1,0 +1,2 @@
+import { modelSchema } from './base.js'
+export const SavedKundliSchema = modelSchema({ id: {type:String,required:true}, userId: {type:String,required:true}, name: {type:String,required:true}, birthDate: {type:String,required:true}, birthTime: {type:String,default:null}, latitude: {type:Number,required:true}, longitude: {type:Number,required:true}, timezone: {type:String,required:true}, createdAt: {type:String,required:true} })

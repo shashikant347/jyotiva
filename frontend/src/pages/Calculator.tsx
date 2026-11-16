@@ -1,9 +1,13 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
+import { isPlannedRoute } from '../data'
 import { usePageMeta } from '../hooks'
 import { api, isApiError } from '../services/api'
 import { todayISO } from '../utils'
+import NotFound from './NotFound'
+import Placeholder from './Placeholder'
+import BirthFields, { emptyBirth, toPayload, validateBirth, type BirthState } from '../astro/BirthFields'
 
-type Kind = 'names' | 'name' | 'date' | 'digits'
+type Kind = 'names' | 'name' | 'date' | 'digits' | 'birth' | 'transit'
 interface Def { slug: string; title: string; intro: string; kind: Kind; labels?: [string, string]; button?: string; render: (r: any) => ReactNode }
 
 const Big = ({ children, sub }: { children: ReactNode; sub?: string }) => <><p className="balance">{children}</p>{sub && <p className="muted">{sub}</p>}</>
@@ -33,20 +37,51 @@ export const CALCULATORS: Def[] = [
   },
   { slug: 'age-calculator', title: 'Age Calculator', intro: 'Your exact age in years, months and days.', kind: 'date', render: r => <Big sub={`${r.totalDays.toLocaleString('en-IN')} days old on ${r.asOf}`}>{r.years} years, {r.months} months, {r.days} days</Big> },
   { slug: 'moon-phase-calculator', title: 'Moon Phase Calculator', intro: 'See the Moon phase and tithi on any date.', kind: 'date', button: 'Show phase', render: r => <><Big sub={`${r.illuminationPercent}% lit · ${r.paksha}, tithi ${r.tithiNumber > 15 ? r.tithiNumber - 15 : r.tithiNumber}`}>{r.phase}</Big><p className="muted">Next full moon: {r.nextFullMoon}. Next new moon: {r.nextNewMoon}.</p><Note r={r} /></> },
+  { slug: 'lucky-name-numerology-calculator', title: 'Lucky Name Numerology', intro: 'Calculate your name number using the Pythagorean letter system. This does not suggest or validate a name change.', kind: 'name', render: r => <><Big sub={`Letter total ${r.total}`}>{r.number}</Big><p className="muted small">A name number is a numerology convention, not a prediction.</p></> },
+  { slug: 'sun-sign-calculator', title: 'Sun Sign Calculator', intro: 'Find your sidereal Sun sign from birth details.', kind: 'birth', render: r => <Structured value={r} /> },
+  { slug: 'rising-ascendant-sign-calculator', title: 'Rising / Ascendant Sign Calculator', intro: 'Calculate your sidereal ascendant. Accurate birth time and place are important.', kind: 'birth', render: r => <Structured value={r} /> },
+  { slug: 'rashi-moon-sign-calculator', title: 'Rashi (Moon Sign) Calculator', intro: 'Find your sidereal Moon sign from birth details.', kind: 'birth', render: r => <Structured value={r} /> },
+  { slug: 'nakshatra-birth-star-calculator', title: 'Nakshatra (Birth Star) Calculator', intro: 'Find the Moon nakshatra and pada from birth details.', kind: 'birth', render: r => <Structured value={r} /> },
+  { slug: 'dasha-calculator', title: 'Vimshottari Dasha Calculator', intro: 'View your Vimshottari mahadasha and antardasha periods.', kind: 'birth', render: r => <Structured value={r} /> },
+  { slug: 'birth-natal-chart-calculator', title: 'Birth / Natal Chart Calculator', intro: 'Calculate a sidereal natal chart with whole-sign houses.', kind: 'birth', render: r => <Structured value={r} /> },
+  { slug: 'transit-chart-calculator', title: 'Transit Chart Calculator', intro: 'See sidereal planetary transits by sign and whole-sign house from your natal ascendant.', kind: 'transit', render: r => <Structured value={r} /> },
+  { slug: 'atmakaraka-and-darakaraka-calculator', title: 'Atmakaraka and Darakaraka Calculator', intro: 'Identify the highest and lowest degree among the seven classical planets (Jaimini method).', kind: 'birth', render: r => <Structured value={r} /> },
+  { slug: 'ishta-devata-calculator', title: 'Ishta Devata Chart Factors', intro: 'Calculate Karakamsha and the 12th sign factor. Deity mappings differ by tradition and are not inferred.', kind: 'birth', render: r => <Structured value={r} /> },
+  { slug: 'mangal-dosha-calculator', title: 'Mangal Dosha Calculator', intro: 'Check the project’s documented Mars house rule from Lagna and Moon.', kind: 'birth', render: r => <Structured value={r} /> },
+  { slug: 'shani-sade-sati-calculator', title: 'Shani Sade Sati Calculator', intro: 'Check Saturn’s current sign relative to your natal Moon sign.', kind: 'birth', render: r => <Structured value={r} /> },
+  { slug: 'kaal-sarp-dosh-calculator', title: 'Kaal Sarp Dosh Calculator', intro: 'Check whether the seven classical planets fall on one side of the mean Rahu–Ketu axis.', kind: 'birth', render: r => <Structured value={r} /> },
 ]
 
+function Structured({ value }: { value: unknown }) {
+  if (!value || typeof value !== 'object') return <p>{String(value)}</p>
+  const entries = Object.entries(value as Record<string, unknown>)
+  return <dl className="summary">{entries.map(([key, item]) => <div key={key}><dt className="muted small">{key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())}</dt><dd style={{ margin: 0 }}>{Array.isArray(item) ? item.length && typeof item[0] === 'object' ? <pre className="muted small" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(item, null, 2)}</pre> : item.join(', ') || 'None' : item && typeof item === 'object' ? <pre className="muted small" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{JSON.stringify(item, null, 2)}</pre> : typeof item === 'boolean' ? item ? 'Yes' : 'No' : String(item ?? '—')}</dd></div>)}</dl>
+}
+
 export default function Calculator({ slug }: { slug: string }) {
-  const def = CALCULATORS.find(c => c.slug === slug)!
+  const def = CALCULATORS.find(c => c.slug === slug)
+  if (!def) return isPlannedRoute(`/${slug}`) ? <Placeholder /> : <NotFound />
+  return <CalculatorForm slug={slug} def={def} />
+}
+
+function CalculatorForm({ slug, def }: { slug: string; def: Def }) {
   usePageMeta(def.title, { description: def.intro })
   const [a, setA] = useState(''), [b, setB] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [res, setRes] = useState<unknown>(null)
+  const [birth, setBirth] = useState<BirthState>(emptyBirth())
+  const [birthErrs, setBirthErrs] = useState<Record<string, string>>({})
+  const [transitDate, setTransitDate] = useState(todayISO())
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     setErr(''); setRes(null)
-    const body = def.kind === 'names' ? { first: a, second: b } : def.kind === 'name' ? { name: a } : def.kind === 'digits' ? { number: a } : { date: a }
+    const isBirth = def.kind === 'birth' || def.kind === 'transit'
+    const v = isBirth ? validateBirth(birth) : {}
+    setBirthErrs(v)
+    if (Object.keys(v).length) return
+    const body = def.kind === 'names' ? { first: a, second: b } : def.kind === 'name' ? { name: a } : def.kind === 'digits' ? { number: a } : def.kind === 'birth' ? toPayload(birth) : def.kind === 'transit' ? { birth: toPayload(birth), transitDate } : { date: a }
     setBusy(true)
     try { setRes(await api(`/tools/calc/${slug}`, { method: 'POST', body, auth: false })) }
     catch (x) { setErr(isApiError(x) ? (x.code === 'NETWORK' ? "Can't reach the server. Check your connection." : x.message) : 'Something went wrong') }
@@ -59,10 +94,10 @@ export default function Calculator({ slug }: { slug: string }) {
       <h1 className="page-h">{def.title}</h1>
       <p className="lead">{def.intro}</p>
       <form className="panel form" onSubmit={submit} noValidate>
-        <div className="field">
+        {(def.kind === 'birth' || def.kind === 'transit') ? <><BirthFields value={birth} onChange={setBirth} errors={birthErrs} />{def.kind === 'transit' && <div className="field"><label htmlFor="transit-date">Transit date</label><input id="transit-date" type="date" min="1900-01-01" max="2100-12-31" value={transitDate} onChange={e => setTransitDate(e.target.value)} /></div>}</> : <div className="field">
           <label htmlFor="c1">{def.kind === 'date' ? (slug === 'moon-phase-calculator' ? 'Date' : 'Date of birth') : label(0, 'Name')}</label>
           <input id="c1" value={a} type={def.kind === 'date' ? 'date' : 'text'} inputMode={def.kind === 'digits' ? 'numeric' : undefined} max={def.kind === 'date' && slug !== 'moon-phase-calculator' ? todayISO() : undefined} onChange={e => setA(e.target.value)} />
-        </div>
+        </div>}
         {def.kind === 'names' && <div className="field"><label htmlFor="c2">{label(1, 'Second name')}</label><input id="c2" value={b} onChange={e => setB(e.target.value)} /></div>}
         {err && <p className="alert" role="alert">{err}</p>}
         <button className="btn btn-gold" disabled={busy}>{busy ? 'Calculating…' : def.button ?? 'Calculate'}</button>

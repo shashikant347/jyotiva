@@ -1,0 +1,2 @@
+import { modelSchema } from './base.js'
+export const NotificationSchema = modelSchema({ id:{type:String,required:true}, userId:{type:String,required:true}, type:{type:String,enum:['astrologer_available','support_reply'],required:true}, title:{type:String,required:true}, body:{type:String,required:true}, href:{type:String,required:true}, readAt:{type:String,default:null}, createdAt:{type:String,required:true} })

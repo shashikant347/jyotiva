@@ -25,6 +25,7 @@ const writeRt = (v: string | null): void => {
 }
 
 export const setAuthLostHandler = (fn: (() => void) | null): void => { onAuthLost = fn }
+export const getAccessToken = (): string | null => accessToken
 export const hasStoredSession = (): boolean => !!readRt()
 export const getRefreshToken = (): string | null => readRt()
 export function setSession(access: string, refresh: string): void { accessToken = access; writeRt(refresh) }
@@ -84,6 +85,48 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
     throw makeError(res.status, e?.code ?? 'UNKNOWN', e?.message ?? 'Something went wrong', e?.details)
   }
   return json.data as T
+}
+
+/** Upload a raw image body while preserving the normal access-token refresh behavior. */
+export async function uploadImage<T>(path: string, file: File): Promise<T> {
+  const send = () => fetch(BASE + path, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type, ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+    body: file,
+  })
+  let res: Response
+  try {
+    res = await send()
+    if (res.status === 401 && readRt() && (await refreshSession())) res = await send()
+  } catch { throw makeError(0, 'NETWORK', 'Network error') }
+  let json: { success?: boolean; data?: T; error?: { code?: string; message?: string } } | null = null
+  try { json = await res.json() } catch { /* non-JSON response */ }
+  if (!res.ok || !json?.success) throw makeError(res.status, json?.error?.code ?? 'UNKNOWN', json?.error?.message ?? 'Something went wrong')
+  return json.data as T
+}
+
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const send = () => fetch(BASE + path, { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} })
+  let res: Response
+  try {
+    res = await send()
+    if (res.status === 401 && readRt() && (await refreshSession())) res = await send()
+  } catch {
+    throw makeError(0, 'NETWORK', 'Network error')
+  }
+  if (!res.ok) {
+    let json: { error?: { code?: string; message?: string; details?: ApiError['details'] } } | null = null
+    try { json = await res.json() } catch { /* non-JSON response */ }
+    throw makeError(res.status, json?.error?.code ?? 'UNKNOWN', json?.error?.message ?? 'Could not download the file', json?.error?.details)
+  }
+  const url = URL.createObjectURL(await res.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.append(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 export const isApiError = (e: unknown): e is ApiError => e instanceof Error && 'code' in e && 'status' in e

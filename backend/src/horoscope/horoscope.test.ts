@@ -107,6 +107,6 @@ test('large CSV bodies are accepted on the admin route only', async () => {
   const big = HEAD + 'Aries,daily,,,2026-12-01,,' + 'x'.repeat(60_000) + ',,,,,,,\n'
   const r = await call('/admin/horoscopes/import', { method: 'POST', token: adminTok, body: { csv: big, dryRun: true } })
   assert.equal(r.status, 200); assert.ok(r.json.data.errors.length === 1) // too long text, but the body itself was accepted
-  const t = await call('/tools/calc/age-calculator', { method: 'POST', body: { date: '1990-01-01', pad: 'x'.repeat(60_000) } })
+  const t = await call('/tools/calc/love-calculator', { method: 'POST', body: { first: 'John', second: 'Jane', pad: 'x'.repeat(60_000) } })
   assert.equal(t.status, 413)
 })

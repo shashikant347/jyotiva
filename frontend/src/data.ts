@@ -1,7 +1,7 @@
 export const BRAND = 'Jyotiva'
 export const t = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 export type Link = { label: string; to: string; key?: string }
-const CALCS = ['love-calculator','flames-calculator','friendship-calculator','name-compatibility-calculator','name-numerology-calculator','mulank-calculator','destiny-number-calculator','mobile-number-numerology-calculator','lucky-name-numerology-calculator','lucky-vehicle-number-calculator','lo-shu-grid-calculator','sun-sign-calculator','rising-ascendant-sign-calculator','rashi-moon-sign-calculator','nakshatra-birth-star-calculator','dasha-calculator','birth-natal-chart-calculator','transit-chart-calculator','atmakaraka-and-darakaraka-calculator','ishta-devata-calculator','mangal-dosha-calculator','shani-sade-sati-calculator','kaal-sarp-dosh-calculator','moon-phase-calculator','age-calculator']
+const CALCS = ['love-calculator','atmakaraka-and-darakaraka-calculator','name-numerology-calculator','sun-sign-calculator','rising-ascendant-sign-calculator','rashi-moon-sign-calculator','dasha-calculator','nakshatra-birth-star-calculator','mangal-dosha-calculator','shani-sade-sati-calculator']
 export const NAV: { key: string; label: string; items: Link[]; wide?: boolean }[] = [
   { key: 'nav.consult', label: 'Consult', items: [{ label: 'Chat with Astrologer', to: '/chat-with-astrologer' }, { label: 'Call with Astrologer', to: '/talk-to-astrologer' }, { label: 'Free Astrology Chat', to: '/free-astrology-chat' }] },
   { key: 'nav.horoscope', label: 'Horoscope', items: ['daily','tomorrow','yesterday','weekly','monthly','yearly'].map(p => ({ label: t(p) + ' Horoscope', to: `/horoscope/${p}-horoscope` })) },

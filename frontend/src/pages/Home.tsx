@@ -28,10 +28,11 @@ const rng = (s: { start: T; end: T }) => `${hm(s.start)} – ${hm(s.end)}`
 interface HItem { signName: string; text: string; luckyNumber: number | null; luckyColor: string | null; mood: string | null; scores: { love: number | null; career: number | null; health: number | null; money: number | null } }
 
 const CALCS: [string, string, string][] = [
-  ['love-calculator', '💞', 'Love'], ['flames-calculator', '🔥', 'FLAMES'], ['friendship-calculator', '🤝', 'Friendship'],
-  ['name-compatibility-calculator', '🔤', 'Name match'], ['name-numerology-calculator', '🔢', 'Name numerology'], ['mulank-calculator', '1️⃣', 'Mulank'],
-  ['destiny-number-calculator', '🧭', 'Destiny number'], ['mobile-number-numerology-calculator', '📱', 'Mobile number'], ['lucky-vehicle-number-calculator', '🚗', 'Vehicle number'],
-  ['lo-shu-grid-calculator', '▦', 'Lo Shu grid'], ['moon-phase-calculator', '🌙', 'Moon phase'], ['age-calculator', '🎂', 'Age'],
+  ['love-calculator', '💞', 'Love'], ['atmakaraka-and-darakaraka-calculator', '🪐', 'Atmakaraka & Darakaraka'],
+  ['name-numerology-calculator', '🔢', 'Name numerology'], ['sun-sign-calculator', '☀️', 'Sun sign'],
+  ['rising-ascendant-sign-calculator', '🌅', 'Rising sign'], ['rashi-moon-sign-calculator', '🌙', 'Rashi'],
+  ['dasha-calculator', '⏳', 'Dasha'], ['nakshatra-birth-star-calculator', '✨', 'Nakshatra'],
+  ['mangal-dosha-calculator', '🔴', 'Mangal Dosha'], ['shani-sade-sati-calculator', '🪐', 'Shani Sade Sati'],
 ]
 const GLOSSARY: [string, string, string][] = [
   ['Lagna', 'Ascendant', 'The zodiac sign rising on the eastern horizon when you were born. It sets the layout of all twelve houses and changes roughly every two hours, which is why birth time matters.'],
@@ -174,7 +175,7 @@ export default function Home() {
       </section>
 
       <div className="wrap hx-strip hx-rv"><div className="hx-strip-in">
-        {[['₹0', 'Kundli, matching, panchang'], ['12', 'Live calculators'], ['27', 'Nakshatras mapped'], ['EN · हिं', 'Two languages']].map(([n, l]) => <div key={l}><b>{n}</b><span>{l}</span></div>)}
+        {[['₹0', 'Kundli, matching, panchang'], ['10', 'Live calculators'], ['27', 'Nakshatras mapped'], ['EN · हिं', 'Two languages']].map(([n, l]) => <div key={l}><b>{n}</b><span>{l}</span></div>)}
       </div></div>
 
       <div className="hx-marq" aria-hidden><div className="hx-track">{[...NAKSHATRAS, ...NAKSHATRAS].map((n, i) => <span key={i}>{n}</span>)}</div></div>
@@ -209,8 +210,8 @@ export default function Home() {
           <Link to="/chat-with-astrologer" className="hx-tile hx-t-3"><span className="ic">💬</span><h3>Chat or call</h3><p>Pick by language, topic and price per minute.</p><span className="go">Browse astrologers →</span></Link>
           <Link to="/horoscope/daily-horoscope" className="hx-tile hx-t-2"><span className="ic">♌</span><h3>Horoscope</h3><p>All 12 signs. Daily to yearly.</p><span className="go">Read →</span></Link>
           <Link to="/panchang/today-panchang" className="hx-tile hx-t-2"><span className="ic">🪔</span><h3>Panchang</h3><p>Tithi, Rahu Kaal, Hora.</p><span className="go">Today →</span></Link>
-          <Link to="/moon-phase-calculator" className="hx-tile hx-t-2"><span className="ic">🌙</span><h3>Moon phase</h3><p>Phase and tithi for any date.</p><span className="go">Check →</span></Link>
-          <Link to="/love-calculator" className="hx-tile hx-t-w"><span className="ic">🧮</span><h3>12 calculators, from numerology to Lo Shu</h3><p>Quick, fun and free. Love and FLAMES are games and say so; the numerology ones follow Pythagorean rules.</p><span className="go">Open calculators →</span></Link>
+          <Link to="/atmakaraka-and-darakaraka-calculator" className="hx-tile hx-t-2"><span className="ic">🪐</span><h3>Atmakaraka &amp; Darakaraka</h3><p>Explore the Jaimini significators in your birth chart.</p><span className="go">Calculate →</span></Link>
+          <Link to="/love-calculator" className="hx-tile hx-t-w"><span className="ic">🧮</span><h3>10 astrology calculators</h3><p>Explore love, numerology, signs, nakshatra, dasha and dosha tools.</p><span className="go">Open calculators →</span></Link>
         </div>
       </section>
 

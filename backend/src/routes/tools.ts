@@ -88,37 +88,18 @@ toolsRouter.post('/tarot/draw', asyncHandler(async (req, res) => {
 
 // ---- Simple calculators (numerology and fun tools) ----
 const nm = z.string().trim().min(1, 'Enter a name').max(60)
-const dt = z.object({ date: birthDate }).strict()
 const two = z.object({ first: nm, second: nm }).strict()
 const CALCS: Record<string, (body: unknown) => unknown> = {
   'love-calculator': b => { const v = two.parse(b); return calc.love(v.first, v.second) },
-  'flames-calculator': b => { const v = two.parse(b); return calc.flames(v.first, v.second) },
-  'friendship-calculator': b => { const v = two.parse(b); return calc.friendship(v.first, v.second) },
-  'name-compatibility-calculator': b => { const v = two.parse(b); return calc.nameCompatibility(v.first, v.second) },
   'name-numerology-calculator': b => calc.nameNumber(z.object({ name: nm }).strict().parse(b).name),
-  'mulank-calculator': b => calc.mulank(dt.parse(b).date),
-  'destiny-number-calculator': b => calc.destiny(dt.parse(b).date),
-  'mobile-number-numerology-calculator': b => calc.digitNumerology(z.object({ number: z.string().trim().min(3).max(20) }).strict().parse(b).number),
-  'lucky-vehicle-number-calculator': b => calc.digitNumerology(z.object({ number: z.string().trim().min(3).max(20) }).strict().parse(b).number),
-  'lo-shu-grid-calculator': b => calc.loShu(dt.parse(b).date),
-  'age-calculator': b => calc.age(dt.parse(b).date),
-  'moon-phase-calculator': b => calc.moonPhase(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(s => !Number.isNaN(Date.parse(s)) && s >= '1900-01-01' && s <= '2100-12-31', 'Choose a date between 1900 and 2100') }).strict().parse(b).date),
-  'lucky-name-numerology-calculator': b => calc.nameNumber(z.object({ name: nm }).strict().parse(b).name),
   'sun-sign-calculator': b => calc.birthSummary(birthBody.parse(b), 'sun'),
   'rising-ascendant-sign-calculator': b => calc.birthSummary(birthBody.parse(b), 'ascendant'),
   'rashi-moon-sign-calculator': b => calc.birthSummary(birthBody.parse(b), 'moon'),
   'nakshatra-birth-star-calculator': b => calc.birthSummary(birthBody.parse(b), 'nakshatra'),
   'dasha-calculator': b => calc.birthSummary(birthBody.parse(b), 'dasha'),
-  'birth-natal-chart-calculator': b => calc.birthSummary(birthBody.parse(b), 'chart'),
   'atmakaraka-and-darakaraka-calculator': b => calc.birthSummary(birthBody.parse(b), 'karaka'),
-  'ishta-devata-calculator': b => calc.birthSummary(birthBody.parse(b), 'ishta'),
   'mangal-dosha-calculator': b => calc.birthSummary(birthBody.parse(b), 'mangal'),
   'shani-sade-sati-calculator': b => calc.birthSummary(birthBody.parse(b), 'sade-sati'),
-  'kaal-sarp-dosh-calculator': b => calc.birthSummary(birthBody.parse(b), 'kaal-sarp'),
-  'transit-chart-calculator': b => {
-    const v = z.object({ birth: birthBody, transitDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(s => !Number.isNaN(Date.parse(s)) && s >= '1900-01-01' && s <= '2100-12-31') }).strict().parse(b)
-    return calc.transitChart(v.birth, v.transitDate)
-  },
 }
 toolsRouter.post('/calc/:slug', asyncHandler(async (req, res) => {
   const fn = Object.hasOwn(CALCS, req.params.slug) ? CALCS[req.params.slug] : undefined

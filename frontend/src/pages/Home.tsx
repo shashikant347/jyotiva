@@ -57,21 +57,22 @@ const MORE_FAQ: [string, string][] = [
 function Wheel() {
   const planets = [{ r: 62, d: 22, c: '#ffd75e', s: 4.2 }, { r: 44, d: 14, c: '#ff8f6b', s: 3.4 }, { r: 28, d: 9, c: '#9ee6ff', s: 3 }]
   return (
-    <svg viewBox="-120 -120 240 240" className="hx-wheel" role="img" aria-label="Animated zodiac wheel">
+    <svg viewBox="-120 -120 240 240" className="hx-wheel" role="img" aria-label="Animated zodiac wheel with twelve sign symbols">
       <defs>
-        <radialGradient id="hxSun"><stop offset="0" stopColor="#fff7d6" /><stop offset=".45" stopColor="#f6c026" /><stop offset="1" stopColor="#f6c026" stopOpacity="0" /></radialGradient>
-        <linearGradient id="hxRing" x1="0" x2="1"><stop offset="0" stopColor="#ffd75e" /><stop offset="1" stopColor="#a78bfa" /></linearGradient>
+        <radialGradient id="hxSun"><stop offset="0" stopColor="#fff9df" /><stop offset=".45" stopColor="#ffd75e" /><stop offset="1" stopColor="#f6a623" stopOpacity="0" /></radialGradient>
+        <linearGradient id="hxRing" x1="0" x2="1"><stop offset="0" stopColor="#fff0a5" /><stop offset=".55" stopColor="#f6c026" /><stop offset="1" stopColor="#df792c" /></linearGradient>
       </defs>
       <g className="hx-spin">
-        <circle r="113" fill="none" stroke="url(#hxRing)" strokeWidth="1" strokeDasharray="2 5" />
+        <circle r="113" fill="none" stroke="url(#hxRing)" strokeWidth="1.5" strokeDasharray="1.5 4" />
         {Array.from({ length: 72 }, (_, i) => { const a = i * 5 * Math.PI / 180, l = i % 6 === 0 ? 7 : 3.5
-          return <line key={i} x1={104 * Math.cos(a)} y1={104 * Math.sin(a)} x2={(104 + l) * Math.cos(a)} y2={(104 + l) * Math.sin(a)} stroke="#c9b8ff" strokeOpacity=".7" strokeWidth=".7" /> })}
+          return <line key={i} x1={104 * Math.cos(a)} y1={104 * Math.sin(a)} x2={(104 + l) * Math.cos(a)} y2={(104 + l) * Math.sin(a)} stroke="#f6cf70" strokeOpacity=".8" strokeWidth=".7" /> })}
       </g>
-      <circle r="100" fill="none" stroke="url(#hxRing)" strokeWidth="1.4" /><circle r="72" fill="none" stroke="#c9b8ff" strokeOpacity=".45" strokeWidth=".8" />
+      <circle r="100" fill="none" stroke="url(#hxRing)" strokeWidth="1.8" />
+      <circle r="72" fill="none" stroke="#f6cf70" strokeOpacity=".65" strokeWidth="1" />
       {SIGNS.map((s, i) => { const a = (i * 30 - 75) * Math.PI / 180, b = a - .2618
-        return <g key={s[0]}><line x1={72 * Math.cos(b)} y1={72 * Math.sin(b)} x2={100 * Math.cos(b)} y2={100 * Math.sin(b)} stroke="#c9b8ff" strokeOpacity=".5" strokeWidth=".7" />
-          <text x={86 * Math.cos(a)} y={86 * Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontSize="13" fill="#ffe08a">{s[3]}</text></g> })}
-      <g className="hx-spin rev">{[0, 1, 2, 3, 4, 5].map(i => <line key={i} x1="-70" y1="0" x2="70" y2="0" stroke="#a78bfa" strokeOpacity=".25" strokeWidth=".6" transform={`rotate(${i * 30})`} />)}</g>
+        return <g key={s[0]}><line x1={72 * Math.cos(b)} y1={72 * Math.sin(b)} x2={100 * Math.cos(b)} y2={100 * Math.sin(b)} stroke="#f6cf70" strokeOpacity=".58" strokeWidth=".8" />
+          <text x={86 * Math.cos(a)} y={86 * Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontFamily="'Segoe UI Symbol', 'Noto Sans Symbols 2', sans-serif" fontSize="13" fontWeight="700" fill="#fff0a5">{s[3] + '\uFE0E'}</text></g> })}
+      <g className="hx-spin rev">{[0, 1, 2, 3, 4, 5].map(i => <line key={i} x1="-70" y1="0" x2="70" y2="0" stroke="#f6c026" strokeOpacity=".24" strokeWidth=".6" transform={`rotate(${i * 30})`} />)}</g>
       {planets.map(p => <g key={p.r}><circle r={p.r} fill="none" stroke="#fff" strokeOpacity=".16" strokeDasharray="1 3" />
         <g className="hx-orb" style={{ animationDuration: p.d + 's' }}><circle cx={p.r} r={p.s} fill={p.c} /><circle cx={p.r} r={p.s * 2.4} fill={p.c} opacity=".18" /></g></g>)}
       <circle r="20" fill="url(#hxSun)" /><circle r="7" fill="#fff7d6" />

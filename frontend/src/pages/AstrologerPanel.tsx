@@ -76,8 +76,11 @@ function Requests({ online }: { online: boolean }) {
   const live = (items ?? []).find(x => x.status === 'active')
   const past = (items ?? []).filter(x => x.status !== 'requested' && x.status !== 'active')
   return (
-    <div className="panel">
-      <h2>{t('pr.title')}</h2>
+    <div className="panel astro-requests">
+      <div className="astro-section-head">
+        <div><p className="astro-kicker">YOUR INBOX</p><h2>{t('pr.title')}</h2></div>
+        <span className={'astro-status ' + (online ? 'online' : 'offline')}><i />{online ? 'Online' : 'Offline'}</span>
+      </div>
       <p className="muted small">{t(online ? 'pr.hintOn' : 'pr.hintOff')}</p>
       {err && <p className="alert" role="alert">{err}</p>}
       {live && <p className="notice">{t('pr.inChat', { name: live.birth.name })} <Link to={`/chat/${live.id}`}>{t('pr.openChat')}</Link></p>}
@@ -88,6 +91,7 @@ function Requests({ online }: { online: boolean }) {
           <div className="row"><button className="btn btn-gold sm" onClick={() => void act(r.id, 'accept')}>{t('chat.accept')}</button><button className="btn btn-line sm" onClick={() => void act(r.id, 'reject')}>{t('chat.decline')}</button></div>
         </div>
       ))}
+      {items === null && <p className="muted">Loading incoming requests…</p>}
       {items !== null && waiting.length === 0 && !live && <p className="empty">{t('pr.none')}</p>}
       {past.length > 0 && <>
         <h3>{t('pr.recent')}</h3>
@@ -165,24 +169,58 @@ export default function AstrologerPanel() {
       : v.weekly.filter(s => s.day !== day) }))
   }
 
-  if (a === undefined) return <section className="wrap sec"><p className="muted">Loading…</p></section>
-  if (!a) return <section className="wrap sec settings"><h1 className="page-h">Astrologer page</h1>{msg && <p className="alert" role="alert">{msg}</p>}<p className="lead">You have not applied yet.</p><Link className="btn btn-gold" to="/astrologer-signup">Apply now</Link></section>
-  return (
-    <section className="wrap sec settings">
-      <h1 className="page-h">Astrologer page</h1>
-      <div className="panel">
-        <p><b>{a.displayName}</b> · {a.experienceYears} years · chat {rupees(a.chatPricePaise)}/min · call {rupees(a.callPricePaise)}/min</p>
-        <p>Application status: <b>{a.applicationStatus}</b>. {TEXT[a.applicationStatus]}</p>
-        {a.applicationStatus === 'approved' && <>
-          <div className="row"><Portrait a={a} size={88} /><label className="field">Profile photo (JPEG, PNG or WebP; max 5 MB)<input type="file" accept="image/jpeg,image/png,image/webp" disabled={photoBusy} onChange={e => { void updatePhoto(e.target.files?.[0]); e.currentTarget.value = '' }} /></label></div>
-          {photoMsg && <p className="muted" role="status">{photoMsg}</p>}
-          <p>You are currently <b>{a.status}</b>.</p>
-          <button className="btn btn-gold" onClick={toggleOnline}>{a.status === 'offline' ? 'Go online' : 'Go offline'}</button>
-          <p><Link to={`/best-astrologer/${a.slug}`}>View my public profile</Link></p></>}
-        {a.applicationStatus === 'rejected' && <Link className="btn btn-gold" to="/astrologer-signup">Apply again</Link>}
+  if (a === undefined) return <section className="wrap sec astro-dashboard"><p className="muted">Loading your studio…</p></section>
+  if (!a) return <section className="wrap sec astro-dashboard">
+    <div className="astro-welcome astro-welcome-apply">
+      <div><p className="astro-kicker">Jyotiva · Astrologer studio</p><h1>Begin your astrologer journey</h1><p className="lead">Create your profile to connect with people looking for trusted guidance.</p>
         {msg && <p className="alert" role="alert">{msg}</p>}
+        <Link className="btn btn-gold" to="/astrologer-signup">Apply to become an astrologer</Link>
       </div>
-      {a.applicationStatus === 'approved' && <>
+      <div className="astro-orbit" aria-hidden="true"><span>✦</span><i>☾</i><b>ॐ</b></div>
+    </div>
+  </section>
+  return (
+    <section className="wrap sec settings astro-dashboard">
+      <div className="astro-welcome">
+        <div className="astro-welcome-copy">
+          <p className="astro-kicker">JYOTIVA · ASTROLOGER STUDIO</p>
+          <h1>Welcome back, {a.displayName}</h1>
+          <p>One place to manage your presence, consultations, and client requests.</p>
+          {msg && <p className="alert" role="alert">{msg}</p>}
+          {a.applicationStatus === 'approved' && <div className="row astro-hero-actions">
+            <button className="btn btn-gold" onClick={toggleOnline}>{a.status === 'offline' ? 'Go online' : 'Go offline'}</button>
+            <Link className="btn astro-profile-button" to={`/best-astrologer/${a.slug}`}>View public profile <span aria-hidden="true">↗</span></Link>
+          </div>}
+        </div>
+        <div className="astro-hero-profile">
+          {a.applicationStatus === 'approved' ? <Portrait a={a} size={88} /> : <div className="astro-avatar-placeholder" aria-hidden="true">{a.displayName.charAt(0).toUpperCase()}</div>}
+          <div className="astro-profile-meta">
+            <b>{a.displayName}</b>
+            <span className={'astro-status ' + (a.applicationStatus === 'approved' ? a.status : a.applicationStatus)}><i />{a.applicationStatus === 'approved' ? (a.status === 'busy' ? 'In a chat' : a.status) : a.applicationStatus}</span>
+          </div>
+          {a.applicationStatus === 'approved' && <label className="field astro-photo-field">Update profile photo
+            <input type="file" accept="image/jpeg,image/png,image/webp" disabled={photoBusy} onChange={e => { void updatePhoto(e.target.files?.[0]); e.currentTarget.value = '' }} />
+              <small>JPEG, PNG or WebP · up to 5 MB</small>
+          </label>}
+          {photoMsg && <p className="muted small" role="status">{photoMsg}</p>}
+        </div>
+      </div>
+
+      {a.applicationStatus !== 'approved' ? <div className="panel astro-application-card">
+        <span className={'astro-status ' + a.applicationStatus}><i />Application {a.applicationStatus}</span>
+        <h2>{a.applicationStatus === 'pending' ? 'Your profile is being reviewed' : a.applicationStatus === 'rejected' ? 'Your application needs an update' : 'Your profile is currently paused'}</h2>
+        <p className="muted">{TEXT[a.applicationStatus]}</p>
+        {a.applicationStatus === 'rejected' && <Link className="btn btn-gold" to="/astrologer-signup">Update and apply again</Link>}
+        {a.applicationStatus === 'suspended' && <Link to="/customer-support">Contact support</Link>}
+      </div> : <>
+        <div className="astro-metrics" aria-label="Astrologer profile overview">
+          <article className="astro-metric"><span>EXPERIENCE</span><b>{a.experienceYears} <small>years</small></b><i>✦</i></article>
+          <article className="astro-metric"><span>CHAT SESSION</span><b>{rupees(a.chatPricePaise)} <small>/ min</small></b><i>☷</i></article>
+          <article className="astro-metric"><span>CALL SESSION</span><b>{rupees(a.callPricePaise)} <small>/ min</small></b><i>◖</i></article>
+          <article className="astro-metric"><span>PROFILE STATUS</span><b className={a.status}>{a.status === 'busy' ? 'In a chat' : a.status === 'offline' ? 'Offline' : 'Online'}</b><i>◉</i></article>
+        </div>
+        <Requests online={a.status !== 'offline'} />
+        <div className="astro-settings-grid">
         <form className="panel settings" onSubmit={savePricing}>
           <h2>Consultation prices</h2>
           <p className="muted small">Set your price per minute in rupees. Existing requests and chats keep the rate they started with. Allowed range: ₹5–₹200.</p>
@@ -207,7 +245,7 @@ export default function AstrologerPanel() {
           <button className="btn btn-gold" type="submit">Save weekly hours</button>
           {availabilityMsg && <p className="muted" role="status">{availabilityMsg}</p>}
         </form>
-        <Requests online={a.status !== 'offline'} />
+        </div>
         <AstrologerPayouts />
       </>}
     </section>

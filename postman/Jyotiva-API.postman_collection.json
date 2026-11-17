@@ -1,0 +1,2954 @@
+{
+  "info": {
+    "name": "Jyotiva REST API",
+    "description": "HTTP API collection for the Jyotiva backend.\nSet baseUrl if needed, start the backend, then run Authentication > Send OTP and Verify OTP.\nThe collection saves development OTPs and auth tokens automatically when returned.\nAdmin requests require the matching admin role.\nDelete, financial, publish, and status-changing requests can modify local data; check descriptions before sending.\nRealtime chat events use Socket.IO and are not ordinary HTTP requests in this collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1"
+    },
+    {
+      "key": "phone",
+      "value": ""
+    },
+    {
+      "key": "otp",
+      "value": ""
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "birthProfileId",
+      "value": ""
+    },
+    {
+      "key": "kundliId",
+      "value": ""
+    },
+    {
+      "key": "astrologerSlug",
+      "value": ""
+    },
+    {
+      "key": "astrologerId",
+      "value": ""
+    },
+    {
+      "key": "astrologerPhotoFilename",
+      "value": ""
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "paymentId",
+      "value": ""
+    },
+    {
+      "key": "razorpayOrderId",
+      "value": ""
+    },
+    {
+      "key": "razorpayPaymentId",
+      "value": ""
+    },
+    {
+      "key": "razorpaySignature",
+      "value": ""
+    },
+    {
+      "key": "razorpayWebhookSignature",
+      "value": ""
+    },
+    {
+      "key": "couponCode",
+      "value": "POSTMAN10"
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "notificationId",
+      "value": ""
+    },
+    {
+      "key": "ticketId",
+      "value": ""
+    },
+    {
+      "key": "chatReportId",
+      "value": ""
+    },
+    {
+      "key": "payoutId",
+      "value": ""
+    },
+    {
+      "key": "blogPostId",
+      "value": ""
+    },
+    {
+      "key": "blogSlug",
+      "value": ""
+    },
+    {
+      "key": "festivalId",
+      "value": ""
+    },
+    {
+      "key": "festivalSlug",
+      "value": ""
+    },
+    {
+      "key": "horoscopeId",
+      "value": ""
+    },
+    {
+      "key": "mediaFilename",
+      "value": ""
+    },
+    {
+      "key": "pushEndpoint",
+      "value": ""
+    },
+    {
+      "key": "pushP256dh",
+      "value": ""
+    },
+    {
+      "key": "pushAuth",
+      "value": ""
+    },
+    {
+      "key": "imageContentType",
+      "value": "image/jpeg"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/send-otp",
+            "description": "Local development may return devOtp. The test script saves it in this collection.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data?.devOtp) pm.collectionVariables.set('otp', json.data.devOtp);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify OTP (save tokens)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/verify-otp",
+            "description": "Run Send OTP first. This stores accessToken and refreshToken in the collection variables.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"code\": \"{{otp}}\",\n  \"language\": \"en\",\n  \"theme\": \"light\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "if (json.success && json.data?.refreshToken) pm.collectionVariables.set('refreshToken', json.data.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh tokens",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/refresh",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "if (json.success && json.data?.refreshToken) pm.collectionVariables.set('refreshToken', json.data.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/logout",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) pm.collectionVariables.set('accessToken', '');",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) pm.collectionVariables.set('refreshToken', '');"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "My account",
+      "item": [
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/me",
+            "description": ""
+          }
+        },
+        {
+          "name": "Update my profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman User\",\n  \"gender\": \"other\",\n  \"email\": \"postman@example.com\",\n  \"language\": \"en\",\n  \"theme\": \"light\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Export my account data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/me/export",
+            "description": ""
+          }
+        },
+        {
+          "name": "List notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/me/notifications",
+            "description": ""
+          }
+        },
+        {
+          "name": "Get browser push config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/me/push/config",
+            "description": ""
+          }
+        },
+        {
+          "name": "Subscribe to browser push",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/push-subscriptions",
+            "description": "Requires VAPID configuration and a real browser push subscription.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpoint\": \"https://fcm.googleapis.com/fcm/send/replace-with-real-endpoint\",\n  \"keys\": {\n    \"p256dh\": \"{{pushP256dh}}\",\n    \"auth\": \"{{pushAuth}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove browser push subscription",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/push-subscriptions",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endpoint\": \"{{pushEndpoint}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mark notification as read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/me/notifications/{{notificationId}}/read",
+            "description": ""
+          }
+        },
+        {
+          "name": "Delete my account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/me",
+            "description": "Destructive: permanently deletes the signed-in account and its personal data."
+          }
+        },
+        {
+          "name": "List saved Kundlis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/me/kundlis",
+            "description": ""
+          }
+        },
+        {
+          "name": "Save a Kundli",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/kundlis",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example birth chart\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data && json.data.id) pm.collectionVariables.set('kundliId', json.data && json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get a saved Kundli",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/me/kundlis/{{kundliId}}",
+            "description": ""
+          }
+        },
+        {
+          "name": "Delete a saved Kundli",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/me/kundlis/{{kundliId}}",
+            "description": ""
+          }
+        },
+        {
+          "name": "List birth profiles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/me/birth-profiles",
+            "description": ""
+          }
+        },
+        {
+          "name": "Create a birth profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/birth-profiles",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman User\",\n  \"gender\": \"other\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"birthPlace\": \"New Delhi\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\",\n  \"isPrimary\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data && json.data.id) pm.collectionVariables.set('birthProfileId', json.data && json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update a birth profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/birth-profiles/{{birthProfileId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman User Updated\",\n  \"isPrimary\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete a birth profile",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/me/birth-profiles/{{birthProfileId}}",
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Astrology tools",
+      "item": [
+        {
+          "name": "Search birth places",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tools/places?q=Delhi",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "List supported cities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tools/cities",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Calculate Kundli",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/kundli",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Calculate Kundli matching",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/matching",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bride\": {\n    \"name\": \"Bride\",\n    \"birthDate\": \"1990-05-10\",\n    \"birthTime\": \"12:30\",\n    \"latitude\": 28.6139,\n    \"longitude\": 77.209,\n    \"timezone\": \"Asia/Kolkata\"\n  },\n  \"groom\": {\n    \"name\": \"Groom\",\n    \"birthDate\": \"1992-08-14\",\n    \"birthTime\": \"12:30\",\n    \"latitude\": 28.6139,\n    \"longitude\": 77.209,\n    \"timezone\": \"Asia/Kolkata\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Sign compatibility",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tools/compatibility/Aries/Taurus",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Draw Tarot cards",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/tarot/draw",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spread\": \"three\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "love-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/love-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first\": \"Asha\",\n  \"second\": \"Ravi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "flames-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/flames-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first\": \"Asha\",\n  \"second\": \"Ravi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "friendship-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/friendship-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first\": \"Asha\",\n  \"second\": \"Ravi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "name-compatibility-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/name-compatibility-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first\": \"Asha\",\n  \"second\": \"Ravi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "name-numerology-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/name-numerology-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Asha Sharma\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "mulank-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/mulank-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"1990-05-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "destiny-number-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/destiny-number-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"1990-05-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "mobile-number-numerology-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/mobile-number-numerology-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"number\": \"9876543210\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "lucky-vehicle-number-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/lucky-vehicle-number-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"number\": \"DL01AB1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "lo-shu-grid-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/lo-shu-grid-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"1990-05-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "age-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/age-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"1990-05-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "moon-phase-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/moon-phase-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-11-16\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "lucky-name-numerology-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/lucky-name-numerology-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Asha Sharma\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "sun-sign-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/sun-sign-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "rising-ascendant-sign-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/rising-ascendant-sign-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "rashi-moon-sign-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/rashi-moon-sign-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "nakshatra-birth-star-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/nakshatra-birth-star-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "dasha-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/dasha-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "birth-natal-chart-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/birth-natal-chart-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "atmakaraka-and-darakaraka-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/atmakaraka-and-darakaraka-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "ishta-devata-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/ishta-devata-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "mangal-dosha-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/mangal-dosha-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "shani-sade-sati-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/shani-sade-sati-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "kaal-sarp-dosh-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/kaal-sarp-dosh-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example\",\n  \"birthDate\": \"1990-05-10\",\n  \"birthTime\": \"12:30\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "transit-chart-calculator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/calc/transit-chart-calculator",
+            "description": "The URL slug selects the calculation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"birth\": {\n    \"name\": \"Example\",\n    \"birthDate\": \"1990-05-10\",\n    \"birthTime\": \"12:30\",\n    \"latitude\": 28.6139,\n    \"longitude\": 77.209,\n    \"timezone\": \"Asia/Kolkata\"\n  },\n  \"transitDate\": \"2026-11-16\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Calculate Panchang",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/panchang",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-11-16\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Search Shubh Muhurat screening windows",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tools/muhurat/search",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"2026-11-16\",\n  \"to\": \"2026-11-18\",\n  \"latitude\": 28.6139,\n  \"longitude\": 77.209,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Horoscope, festivals and blog",
+      "item": [
+        {
+          "name": "Get daily horoscopes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/horoscope/daily?lang=en&category=general",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Get one sign horoscope",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/horoscope/daily/aries?lang=en&category=general",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "List festivals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/festivals?year=2026&lang=en",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Get festival by slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/festivals/{{festivalSlug}}?lang=en",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "List published blog posts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/blog?page=1&limit=9",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Get blog post by slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/blog/{{blogSlug}}",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Get blog cover image",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/blog/media/{{mediaFilename}}",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Astrologers",
+      "item": [
+        {
+          "name": "Get astrologer categories and skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/astrologers/categories",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "List astrologers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/astrologers?mode=chat&page=1&limit=12&sort=popular",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Get astrologer profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/astrologers/{{astrologerSlug}}",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "List astrologer reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/astrologers/{{astrologerSlug}}/reviews?page=1",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Get astrologer photo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/astrologers/media/{{astrologerPhotoFilename}}",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Get my astrologer application",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/astrologers/me/profile",
+            "description": ""
+          }
+        },
+        {
+          "name": "Apply to become an astrologer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/astrologers/apply",
+            "description": "Creates a pending application. A super admin must approve it before the profile is public.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Postman Sample Astrologer\",\n  \"bio\": \"An example biography with more than twenty characters for local API testing.\",\n  \"experienceYears\": 3,\n  \"gender\": \"other\",\n  \"languages\": [\n    \"en\"\n  ],\n  \"categories\": [\n    \"career\"\n  ],\n  \"skills\": [\n    \"vedic\"\n  ],\n  \"chatPriceRupees\": 20,\n  \"callPriceRupees\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update astrologer availability",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/astrologers/me/availability",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timezone\": \"Asia/Kolkata\",\n  \"weekly\": [\n    {\n      \"day\": 1,\n      \"start\": \"09:00\",\n      \"end\": \"17:00\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update astrologer prices",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/astrologers/me/pricing",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chatPriceRupees\": 20,\n  \"callPriceRupees\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set astrologer online",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/astrologers/me/status",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isOnline\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set astrologer offline",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/astrologers/me/status",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isOnline\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Upload astrologer profile photo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{imageContentType}}"
+              }
+            ],
+            "url": "{{baseUrl}}/astrologers/me/photo",
+            "description": "Choose a JPEG, PNG or WebP file in Postman and set imageContentType to its MIME type; approved astrologer only, maximum 5 MB.",
+            "body": {
+              "mode": "file",
+              "file": {
+                "src": ""
+              }
+            }
+          }
+        },
+        {
+          "name": "Get my payout summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/astrologers/me/payouts",
+            "description": ""
+          }
+        },
+        {
+          "name": "Request an astrologer payout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/astrologers/me/payouts",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amountPaise\": 1000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data && json.data.id) pm.collectionVariables.set('payoutId', json.data && json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get availability watch",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/astrologers/{{astrologerSlug}}/availability-watch",
+            "description": ""
+          }
+        },
+        {
+          "name": "Watch for astrologer availability",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/astrologers/{{astrologerSlug}}/availability-watch",
+            "description": ""
+          }
+        },
+        {
+          "name": "Remove availability watch",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/astrologers/{{astrologerSlug}}/availability-watch",
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat sessions",
+      "item": [
+        {
+          "name": "Get chat eligibility and wallet status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sessions/status",
+            "description": ""
+          }
+        },
+        {
+          "name": "List my chats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sessions/mine",
+            "description": ""
+          }
+        },
+        {
+          "name": "List incoming astrologer requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sessions/incoming",
+            "description": "Astrologer account required."
+          }
+        },
+        {
+          "name": "Create a chat request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sessions",
+            "description": "Requires a birth profile and available astrologer. Paid chats require enough wallet balance.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"astrologerSlug\": \"{{astrologerSlug}}\",\n  \"birthProfileId\": \"{{birthProfileId}}\",\n  \"free\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data && json.data.session && json.data.session.id) pm.collectionVariables.set('sessionId', json.data && json.data.session && json.data.session.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get chat session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sessions/{{sessionId}}",
+            "description": ""
+          }
+        },
+        {
+          "name": "Get chat messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/messages",
+            "description": ""
+          }
+        },
+        {
+          "name": "Accept chat request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/accept",
+            "description": "Astrologer participant only."
+          }
+        },
+        {
+          "name": "Reject chat request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/reject",
+            "description": "Astrologer participant only."
+          }
+        },
+        {
+          "name": "Cancel chat request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/cancel",
+            "description": "Chat requester only."
+          }
+        },
+        {
+          "name": "End chat",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/end",
+            "description": "Chat participant only."
+          }
+        },
+        {
+          "name": "Review completed chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/review",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Helpful consultation.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Report a chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sessions/{{sessionId}}/report",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"other\",\n  \"details\": \"Describe the concern here with at least ten characters.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wallet and payments",
+      "item": [
+        {
+          "name": "Get wallet balance and payment mode",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/wallet",
+            "description": ""
+          }
+        },
+        {
+          "name": "List wallet transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/wallet/transactions?page=1",
+            "description": ""
+          }
+        },
+        {
+          "name": "Create a recharge order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/wallet/recharge",
+            "description": "Minimum recharge is Rs 10. Local development without Razorpay keys uses mock payments.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amountPaise\": 1000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data && json.data.paymentId) pm.collectionVariables.set('paymentId', json.data && json.data.paymentId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complete a mock recharge (development only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/wallet/recharge/mock-pay",
+            "description": "Only available in development when using the mock gateway.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": \"{{paymentId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Confirm Razorpay checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/wallet/recharge/confirm",
+            "description": "Use actual order, payment and checkout signature values from Razorpay.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": \"{{paymentId}}\",\n  \"razorpayOrderId\": \"{{razorpayOrderId}}\",\n  \"razorpayPaymentId\": \"{{razorpayPaymentId}}\",\n  \"razorpaySignature\": \"{{razorpaySignature}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get payment status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/wallet/payments/{{paymentId}}",
+            "description": ""
+          }
+        },
+        {
+          "name": "Validate a coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/coupons/apply",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{couponCode}}\",\n  \"amountPaise\": 1000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Razorpay webhook (signed raw JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-razorpay-signature",
+                "value": "{{razorpayWebhookSignature}}"
+              }
+            ],
+            "url": "{{baseUrl}}/payments/webhook/razorpay",
+            "description": "Requires a valid HMAC signature over the exact raw body. A placeholder signature will fail validation.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.captured\",\n  \"payload\": {\n    \"payment\": {\n      \"entity\": {\n        \"id\": \"{{razorpayPaymentId}}\",\n        \"order_id\": \"{{razorpayOrderId}}\",\n        \"amount\": 1000,\n        \"currency\": \"INR\"\n      }\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer support",
+      "item": [
+        {
+          "name": "List my support tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/support/tickets",
+            "description": ""
+          }
+        },
+        {
+          "name": "Create a support ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/support/tickets",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"other\",\n  \"subject\": \"Postman API test\",\n  \"message\": \"Describe your question or issue here in at least ten characters.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data && json.data.id) pm.collectionVariables.set('ticketId', json.data && json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get my support ticket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/support/tickets/{{ticketId}}",
+            "description": ""
+          }
+        },
+        {
+          "name": "Reply to my support ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/support/tickets/{{ticketId}}/messages",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Additional details for the support team.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Close my support ticket",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/support/tickets/{{ticketId}}/close",
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - super admin",
+      "item": [
+        {
+          "name": "Admin dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/dashboard",
+            "description": ""
+          }
+        },
+        {
+          "name": "Search users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/users?page=1&limit=25",
+            "description": ""
+          }
+        },
+        {
+          "name": "Change an admin sub-role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/admin-role",
+            "description": "Super admin only. Target must already be an admin account.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminRole\": \"support\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Suspend or reactivate a user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{userId}}/status",
+            "description": "Super admin only. Suspension signs out the user.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"suspended\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Search audit logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/audit-logs?page=1&limit=25",
+            "description": ""
+          }
+        },
+        {
+          "name": "List astrologer applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/astrologers?status=pending",
+            "description": ""
+          }
+        },
+        {
+          "name": "Approve an astrologer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/astrologers/{{astrologerId}}/status",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Set astrologer badge",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/astrologers/{{astrologerId}}/badge",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"badge\": \"Featured\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove astrologer badge",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/astrologers/{{astrologerId}}/badge",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"badge\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove all demo astrologers",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/astrologers/demo",
+            "description": "Destructive: removes all development demo astrologer profiles and their reviews."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - content",
+      "item": [
+        {
+          "name": "Download horoscope CSV template",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/horoscopes/template",
+            "description": ""
+          }
+        },
+        {
+          "name": "List and filter horoscopes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/horoscopes?period=daily&status=draft",
+            "description": ""
+          }
+        },
+        {
+          "name": "Import horoscope CSV (dry run)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/horoscopes/import",
+            "description": "Content admin only. Dry run validates the sample without writing it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"csv\": \"sign,period,category,language,date_from,date_to,text,lucky_number,lucky_color,mood,love_score,career_score,health_score,money_score\\nAries,daily,general,en,2026-11-16,,Example text for a draft horoscope.,7,Blue,Calm,4,3,4,5\",\n  \"publish\": false,\n  \"schedule\": false,\n  \"dryRun\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Publish or unpublish horoscope batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/horoscopes/publish",
+            "description": "Changes all matching horoscope entries for this period and date.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"period\": \"daily\",\n  \"dateFrom\": \"2026-11-16\",\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Edit one horoscope from CSV row",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/horoscopes/{{horoscopeId}}",
+            "description": "Content admin only. CSV must contain exactly one valid data row.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"csv\": \"sign,period,category,language,date_from,date_to,text,lucky_number,lucky_color,mood,love_score,career_score,health_score,money_score\\nAries,daily,general,en,2026-11-16,,Example text for a draft horoscope.,7,Blue,Calm,4,3,4,5\",\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List admin festivals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/festivals?year=2026&status=draft",
+            "description": ""
+          }
+        },
+        {
+          "name": "Create festival draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/festivals",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman sample festival\",\n  \"date\": \"2026-11-16\",\n  \"region\": \"India\",\n  \"language\": \"en\",\n  \"tithi\": \"\",\n  \"paksha\": \"\",\n  \"description\": \"Sample draft entry for testing the festival API.\",\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data && json.data.id) pm.collectionVariables.set('festivalId', json.data && json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update festival",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/festivals/{{festivalId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman sample festival updated\",\n  \"date\": \"2026-11-16\",\n  \"region\": \"India\",\n  \"language\": \"en\",\n  \"tithi\": \"\",\n  \"paksha\": \"\",\n  \"description\": \"Updated sample draft entry for testing the festival API.\",\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete festival",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/festivals/{{festivalId}}",
+            "description": "Destructive: permanently removes this festival entry."
+          }
+        },
+        {
+          "name": "List admin blog posts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/blog",
+            "description": ""
+          }
+        },
+        {
+          "name": "Create blog draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/blog",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman sample article\",\n  \"slug\": \"postman-sample-article\",\n  \"excerpt\": \"A short sample excerpt for a draft article.\",\n  \"body\": \"This is a sample article body with more than fifty characters for validating the blog API in local development.\",\n  \"category\": \"General\",\n  \"tags\": [\n    \"sample\"\n  ],\n  \"authorName\": \"Jyotiva\",\n  \"language\": \"en\",\n  \"seoTitle\": \"\",\n  \"seoDescription\": \"\",\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.data && json.data.id) pm.collectionVariables.set('blogPostId', json.data && json.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update blog post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/blog/{{blogPostId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman sample article\",\n  \"slug\": \"postman-sample-article\",\n  \"excerpt\": \"A short sample excerpt for a draft article.\",\n  \"body\": \"This is a sample article body with more than fifty characters for validating the blog API in local development.\",\n  \"category\": \"General\",\n  \"tags\": [\n    \"sample\"\n  ],\n  \"authorName\": \"Jyotiva\",\n  \"language\": \"en\",\n  \"seoTitle\": \"\",\n  \"seoDescription\": \"\",\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Upload blog cover image",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "{{imageContentType}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/blog/{{blogPostId}}/cover",
+            "description": "Content admin only. Choose a JPEG, PNG or WebP file and set imageContentType to its MIME type; maximum 5 MB.",
+            "body": {
+              "mode": "file",
+              "file": {
+                "src": ""
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove blog cover image",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/blog/{{blogPostId}}/cover",
+            "description": ""
+          }
+        },
+        {
+          "name": "Delete blog post",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/blog/{{blogPostId}}",
+            "description": "Destructive: permanently removes this blog post."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - support",
+      "item": [
+        {
+          "name": "List support tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/support/tickets?status=open",
+            "description": ""
+          }
+        },
+        {
+          "name": "Get support ticket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/support/tickets/{{ticketId}}",
+            "description": ""
+          }
+        },
+        {
+          "name": "Reply to support ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/support/tickets/{{ticketId}}/messages",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Support team response for local testing.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Change support ticket status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/support/tickets/{{ticketId}}/status",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"pending\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List chat reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/chat-reports?status=open",
+            "description": ""
+          }
+        },
+        {
+          "name": "Review chat report",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/chat-reports/{{chatReportId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"dismissed\",\n  \"note\": \"Reviewed in local testing; no further action required.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - finance",
+      "item": [
+        {
+          "name": "Export payment or session report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/reports/export?type=payments&from=2026-11-01&to=2026-11-16",
+            "description": ""
+          }
+        },
+        {
+          "name": "List coupons",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/coupons",
+            "description": ""
+          }
+        },
+        {
+          "name": "Create coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/coupons",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"POSTMAN10\",\n  \"type\": \"percent\",\n  \"value\": 10,\n  \"minAmountPaise\": 0,\n  \"maxBonusPaise\": 1000,\n  \"validFrom\": \"2026-11-16T00:00:00.000Z\",\n  \"validTo\": \"2027-01-01T00:00:00.000Z\",\n  \"usageLimit\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Activate or deactivate coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/coupons/{{couponCode}}/active",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Adjust user wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/wallet/{{userId}}/adjust",
+            "description": "Changes a user balance and writes an audit record.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amountPaise\": 1000,\n  \"type\": \"adjustment\",\n  \"note\": \"Local Postman test adjustment.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List ended chats for review",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/sessions?flagged=true",
+            "description": ""
+          }
+        },
+        {
+          "name": "Refund part of a chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/sessions/{{sessionId}}/refund",
+            "description": "Changes financial records; requires an eligible session.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amountPaise\": 1000,\n  \"reason\": \"Approved adjustment for local testing.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Decline a chat refund",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/admin/sessions/{{sessionId}}/refund-decline",
+            "description": "Resolves a flagged refund decision."
+          }
+        },
+        {
+          "name": "List payout requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/payouts?status=requested",
+            "description": ""
+          }
+        },
+        {
+          "name": "Approve a payout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/payouts/{{payoutId}}/status",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reject a payout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/payouts/{{payoutId}}/status",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"rejected\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mark payout as paid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/payouts/{{payoutId}}/status",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"paid\",\n  \"reference\": \"BANK-TRANSFER-REFERENCE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

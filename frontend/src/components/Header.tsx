@@ -1,22 +1,103 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { usePrefs } from '../context/PrefsContext'
 import { adminLandingPath } from '../adminAccess'
 import { ACCOUNT, BRAND, NAV } from '../data'
+import { openSocket } from '../chat/socket'
+import type { SessionView } from '../chat/types'
+import { api } from '../services/api'
+const ACCOUNT_MENU = '__account'
+
+function AstrologerPanelLink({ className = '' }: { className?: string }) {
+  const { user } = useAuth()
+  const [items, setItems] = useState<SessionView[] | null>(null)
+
+  useEffect(() => {
+    if (user?.role !== 'astrologer') {
+      setItems(null)
+      return
+    }
+
+    let live = true
+    api<{ items: SessionView[] }>('/sessions/incoming')
+      .then(result => { if (live) setItems(result.items) })
+      .catch(() => { if (live) setItems(null) })
+
+    const socket = openSocket()
+    const update = (session: SessionView) => setItems(current => {
+      if (!current) return [session]
+      return current.some(item => item.id === session.id)
+        ? current.map(item => item.id === session.id ? session : item)
+        : [session, ...current]
+    })
+    socket.on('session:requested', update)
+    socket.on('session:update', update)
+    return () => { live = false; socket.disconnect() }
+  }, [user?.id, user?.role])
+
+  const waiting = (items ?? []).filter(item =>
+    item.status === 'requested' && Date.parse(item.requestExpiresAt) > Date.now(),
+  ).length
+  const label = waiting > 0
+    ? `Astrologer panel, ${waiting} new chat request${waiting === 1 ? '' : 's'}`
+    : 'Astrologer panel'
+
+  return (
+    <Link to="/astrologer-panel" className={'astro-panel-link ' + className} aria-label={label}>
+      Astrologer panel
+      {waiting > 0 && <span className="astro-request-count" aria-hidden="true">{waiting > 9 ? '9+' : waiting}</span>}
+      {waiting > 0 && <span className="sr">{waiting} pending chat request{waiting === 1 ? '' : 's'}</span>}
+    </Link>
+  )
+}
 
 export default function Header() {
   const [open, setOpen] = useState(false)
-  const [activeMenu, setActiveMenu] = useState<string | null>(null)
+  const [profileOpen, setProfileOpen] = useState(false)
   const { pathname } = useLocation()
   const { user, updateUser } = useAuth()
   const { t, lang, setLang, resolvedTheme, setTheme } = usePrefs()
+  const closeMenuRef = useRef<HTMLButtonElement>(null)
   const close = () => setOpen(false)
 
   useEffect(() => {
     setOpen(false)
-    setActiveMenu(null)
+    setProfileOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    if (!open) return
+    const previousOverflow = document.body.style.overflow
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    document.body.style.overflow = 'hidden'
+    window.requestAnimationFrame(() => closeMenuRef.current?.focus())
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        close()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const menu = document.getElementById('site-drawer')
+      const focusable = menu?.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), summary')
+      if (!focusable?.length) return
+      const first = focusable[0], last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+      previousFocus?.focus()
+    }
+  }, [open])
 
   const isActive = (to: string) => pathname === to || (to !== '/' && pathname.startsWith(`${to}/`))
 
@@ -31,85 +112,119 @@ export default function Header() {
     if (user) updateUser({ language: next }).catch(() => { /* local choice still applies */ })
   }
   const initial = (user?.name || user?.phone || '?').replace('+', '').trim()[0]?.toUpperCase() ?? '?'
+  const firstName = user?.name.trim().split(/\s+/)[0] || 'Profile'
+  const sections = [
+    { title: 'Consult', groups: NAV.slice(0, 2) },
+    { title: 'Free tools', groups: NAV.slice(2) },
+  ]
 
   return (
+    <>
     <header className="hdr">
       <div className="wrap hdr-in">
+        <nav className="nav" aria-label="Main">
+          <button className={'nav-btn explore-toggle' + (NAV.some(group => group.items.some(item => isActive(item.to))) || isActive('/astrology-blog') ? ' active' : '')} onClick={() => setOpen(true)} aria-expanded={open} aria-controls="site-drawer">
+            <span aria-hidden="true">☰</span> 
+          </button>
+        </nav>
         <Link to="/" className="logo" onClick={close} aria-label={`${BRAND} home`}>
           <span className="logo-mark" aria-hidden="true">
             <svg viewBox="0 0 40 40" role="presentation" focusable="false">
               <defs>
                 <linearGradient id="jyotiva-mark-bg" x1="0" y1="0" x2="1" y2="1">
-                  <stop stopColor="#33234f" />
-                  <stop offset="1" stopColor="#171126" />
+                  <stop stopColor="#3a2854" />
+                  <stop offset="1" stopColor="#21152f" />
                 </linearGradient>
-                <linearGradient id="jyotiva-mark-gold" x1="0" y1="0" x2="1" y2="1">
-                  <stop stopColor="#ffe99a" />
-                  <stop offset="1" stopColor="#e5a92c" />
+                <linearGradient id="jyotiva-mark-flame" x1="0" y1="0" x2="1" y2="1">
+                  <stop stopColor="#fff0ad" />
+                  <stop offset="1" stopColor="#efa92b" />
                 </linearGradient>
               </defs>
-              <rect x="1" y="1" width="38" height="38" rx="13" fill="url(#jyotiva-mark-bg)" />
-              <circle cx="20" cy="20" r="13.5" fill="none" stroke="#d8b45d" strokeOpacity=".36" />
-              <path d="M20 5.5v3M20 31.5v3M5.5 20h3M31.5 20h3M9.75 9.75l2.1 2.1m16.3 16.3 2.1 2.1m0-20.5-2.1 2.1m-16.3 16.3-2.1 2.1" stroke="#e9c66e" strokeWidth="1.2" strokeLinecap="round" />
-              <circle cx="20" cy="20" r="8.5" fill="url(#jyotiva-mark-gold)" />
-              <path d="M20 12.5c-1.6 2.3-2.1 4.1-1.3 5.5-2.3-.1-4-1.5-4.9-3.1-.6 3.8 1.5 6.4 4 7.3-.3 1.4.4 3.3 2.2 5.3 1.8-2 2.5-3.9 2.2-5.3 2.5-.9 4.6-3.5 4-7.3-.9 1.6-2.6 3-4.9 3.1.8-1.4.3-3.2-1.3-5.5Z" fill="#38264d" />
-              <circle cx="20" cy="21" r="1.25" fill="#fff4cc" />
+              <circle cx="20" cy="20" r="19" fill="url(#jyotiva-mark-bg)" />
+              <circle cx="20" cy="20" r="17.5" fill="none" stroke="#e8c66f" strokeOpacity=".55" />
+              <path d="M20 8.3c-1.6 3.5-4.1 5.4-4.1 8.7a4.1 4.1 0 0 0 8.2 0c0-3.3-2.5-5.2-4.1-8.7Z" fill="url(#jyotiva-mark-flame)" />
+              <path d="M12 21.3c2.1 1.2 4.7 1.5 8 .1 3.3 1.4 5.9 1.1 8-.1M13.8 23.4c.8 3.5 3.1 5.6 6.2 5.6s5.4-2.1 6.2-5.6M17 31h6" fill="none" stroke="#f4d57c" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M20 6v-1.5M11 12l-1.2-1M29 12l1.2-1" fill="none" stroke="#f4d57c" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           </span>
           <span className="logo-word">{BRAND}</span>
         </Link>
-        <nav className="nav" aria-label="Main">
-          {NAV.map(g => (
-            <div className={'dd-wrap' + (activeMenu === g.label ? ' open' : '')} key={g.label}>
-              <button
-                className={'nav-btn' + (g.items.some(item => isActive(item.to)) ? ' active' : '')}
-                aria-haspopup="true"
-                aria-expanded={activeMenu === g.label}
-                aria-controls={`nav-menu-${g.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                onClick={() => setActiveMenu(current => current === g.label ? null : g.label)}
-              >{t(g.key)}</button>
-              <div id={`nav-menu-${g.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className={'dd' + (g.wide ? ' wide' : '')}>
-                {g.items.map(i => <Link key={i.to} to={i.to} aria-current={isActive(i.to) ? 'page' : undefined} onClick={close}>{i.label}</Link>)}
-              </div>
-            </div>
-          ))}
-          <Link className={'nav-btn' + (isActive('/astrology-blog') ? ' active' : '')} to="/astrology-blog" aria-current={isActive('/astrology-blog') ? 'page' : undefined}>{t('nav.blog')}</Link>
-        </nav>
         <div className="hdr-actions">
           <button className="icon-btn" onClick={toggleLang} aria-label={t('hdr.language')} lang={lang === 'en' ? 'hi' : 'en'}>{lang === 'en' ? 'हि' : 'EN'}</button>
           <button className="icon-btn" onClick={toggleTheme} aria-label={t('hdr.theme')}>{resolvedTheme === 'dark' ? '☀' : '☾'}</button>
           <Link to="/chat-with-astrologer" className="btn btn-gold hide-sm">{t('hdr.talkNow')}</Link>
+          {user?.role === 'astrologer' && <AstrologerPanelLink className="hide-sm" />}
           {user ? (
-            <div className="dd-wrap hide-sm">
-              <button className="icon-btn avatar-btn" aria-haspopup="true" aria-label={t('hdr.account')}>{initial}</button>
-              <div className="dd right">
+            <div className={'dd-wrap profile-menu hide-sm' + (profileOpen ? ' open' : '')}>
+              <button className="profile-trigger" aria-haspopup="true" aria-expanded={profileOpen} aria-controls="account-menu" aria-label={t('hdr.account')} onClick={() => setProfileOpen(value => !value)}>
+                <span className="profile-avatar">{user.photoUrl ? <img src={user.photoUrl} alt="" /> : initial}</span>
+                <span className="profile-label"><b>{firstName}</b><small>Account</small></span>
+                <span className="profile-chevron" aria-hidden="true">⌄</span>
+              </button>
+              <div className="dd right profile-dropdown" id="account-menu">
                 <div className="dd-head"><b>{user.name || t('acct.guest')}</b><span className="muted small">{user.phone}</span></div>
-                {user.role === 'admin' && <Link to={adminLandingPath(user)}>Admin tools</Link>}
-                {ACCOUNT.map(i => <Link key={i.to} to={i.to}>{t(i.key!)}</Link>)}
-                <Link to="/logout">{t('acct.logout')}</Link>
+                {user.role === 'admin' && <Link to={adminLandingPath(user)} onClick={() => setProfileOpen(false)}>Admin tools</Link>}
+                {user.role !== 'astrologer' && <AstrologerPanelLink />}
+                {ACCOUNT.map(item => <Link key={item.to} to={item.to} onClick={() => setProfileOpen(false)}>{t(item.key!)}</Link>)}
+                <Link to="/logout" onClick={() => setProfileOpen(false)}>{t('acct.logout')}</Link>
               </div>
             </div>
-          ) : (
-            <Link to="/login" className="btn btn-line sm hide-sm">{t('hdr.signIn')}</Link>
-          )}
-          <button className="icon-btn burger" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label={t('hdr.menu')}>{open ? '✕' : '☰'}</button>
+          ) : <Link to="/login" className="btn btn-line sm hide-sm">{t('hdr.signIn')}</Link>}
         </div>
       </div>
-      {open && (
-        <div className="drawer">
-          {!user && <Link to="/login" className="btn btn-gold" onClick={close}>{t('hdr.signInUp')}</Link>}
-          {NAV.map(g => (
-            <details key={g.label}><summary>{t(g.key)}</summary>{g.items.map(i => <Link key={i.to} to={i.to} onClick={close}>{i.label}</Link>)}</details>
-          ))}
-          {user && (
-            <details open><summary>{user.name || t('acct.guest')}</summary>
-              {user.role === 'admin' && <Link to={adminLandingPath(user)} onClick={close}>Admin tools</Link>}
-              {ACCOUNT.map(i => <Link key={i.to} to={i.to} onClick={close}>{t(i.key!)}</Link>)}
-              <Link to="/logout" onClick={close}>{t('acct.logout')}</Link>
-            </details>
-          )}
-        </div>
-      )}
     </header>
+    {open && createPortal(
+      <>
+        <button className="drawer-backdrop" onClick={close} aria-label="Close menu" tabIndex={-1} />
+        <aside className="drawer" id="site-drawer" role="dialog" aria-modal="true" aria-label="Explore Jyotiva">
+          <div className="drawer-head">
+            <Link to="/" className="logo" onClick={close} aria-label={`${BRAND} home`}>
+              <span className="logo-mark" aria-hidden="true">✦</span><span className="logo-word">{BRAND}</span>
+            </Link>
+            <button ref={closeMenuRef} className="icon-btn drawer-close" onClick={close} aria-label="Close menu">✕</button>
+          </div>
+          {user ? (
+            <Link to="/profile-settings" className="drawer-user" onClick={close}>
+              <span className="drawer-user-avatar">{initial}</span>
+              <span><b>{user.name || t('acct.guest')}</b><small>{user.phone}</small></span>
+              <span className="drawer-user-arrow" aria-hidden="true">›</span>
+            </Link>
+          ) : <Link to="/login" className="drawer-user" onClick={close}><span className="drawer-user-avatar">↗</span><span><b>{t('hdr.signInUp')}</b><small>Sign in to your Jyotiva account</small></span></Link>}
+
+          <div className="drawer-scroll">
+            {sections.map(section => (
+              <section className="drawer-section" key={section.title}>
+                <h2>{section.title}</h2>
+                {section.groups.map((group, i) => (
+                  <details className="drawer-group" key={group.label} open={group.label === 'Consult' || group.items.some(item => isActive(item.to))}>
+                    <summary>
+                      <span className="drawer-icon" aria-hidden="true">{section.title === 'Consult' ? (i === 0 ? '▢' : '☼') : ['☆', '▦', '▤'][i]}</span>
+                      <span>{t(group.key)}</span><span className="drawer-chevron" aria-hidden="true">⌄</span>
+                    </summary>
+                    <div className="drawer-group-links">
+                      {group.items.map(item => <Link key={item.to} to={item.to} aria-current={isActive(item.to) ? 'page' : undefined} onClick={close}>{item.label}</Link>)}
+                    </div>
+                  </details>
+                ))}
+              </section>
+            ))}
+
+            <section className="drawer-section">
+              <h2>Discover</h2>
+              <Link className="drawer-row" to="/astrology-blog" aria-current={isActive('/astrology-blog') ? 'page' : undefined} onClick={close}><span className="drawer-icon" aria-hidden="true">✎</span>Astrology Blog</Link>
+            </section>
+            {user && <section className="drawer-section">
+              <h2>Account</h2>
+              {user.role === 'admin' && <Link className="drawer-row" to={adminLandingPath(user)} onClick={close}><span className="drawer-icon" aria-hidden="true">⚙</span>Admin tools</Link>}
+              <AstrologerPanelLink />
+              {ACCOUNT.map(item => <Link className="drawer-row" key={item.to} to={item.to} onClick={close}><span className="drawer-icon" aria-hidden="true">›</span>{t(item.key!)}</Link>)}
+              <Link className="drawer-row" to="/logout" onClick={close}><span className="drawer-icon" aria-hidden="true">↪</span>{t('acct.logout')}</Link>
+            </section>}
+          </div>
+        </aside>
+      </>,
+      document.body,
+    )}
+    </>
   )
 }

@@ -63,6 +63,7 @@ function TarotRoute() {
 export default function App() {
   const { pathname } = useLocation()
   const [routeAnnouncement, setRouteAnnouncement] = useState('')
+  const isChatRoom = /^\/chat\/[^/]+$/.test(pathname)
   useEffect(() => {
     let frame = 0
     setRouteAnnouncement('')
@@ -75,9 +76,9 @@ export default function App() {
       <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">{routeAnnouncement}</span>
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <PrefsSync />
-      <Header />
+      {!isChatRoom && <Header />}
       {showCrumbs && <Breadcrumbs />}
-      <main id="main-content" className={pathname === '/' ? 'site-main home-main' : 'site-main inner-main'} tabIndex={-1}>
+      <main id="main-content" className={isChatRoom ? 'site-main chat-main' : pathname === '/' ? 'site-main home-main' : 'site-main inner-main'} tabIndex={-1}>
         <Suspense fallback={<div className="wrap sec" role="status" aria-live="polite">Loading page…</div>}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -131,7 +132,7 @@ export default function App() {
           </Routes>
         </Suspense>
       </main>
-      <Footer innerPage={pathname !== '/'} />
+      {!isChatRoom && <Footer innerPage={pathname !== '/'} />}
     </>
   )
 }

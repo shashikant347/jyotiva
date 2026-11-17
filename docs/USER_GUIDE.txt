@@ -1,0 +1,265 @@
+JYOTIVA - LOCAL USE AND ROLE GUIDE
+==================================
+
+This guide covers running Jyotiva locally, signing in, and understanding what
+each account role can do. It describes the current implementation; some
+integrations (such as real SMS and voice calls) are not enabled yet.
+
+
+1. WHAT YOU NEED
+---------------
+
+- Node.js 20.12 or newer
+- npm
+- The project dependencies installed
+- MongoDB only if you want to use MongoDB locally. Without MONGODB_URI, the
+  backend uses its local JSON data file.
+
+
+2. START THE APP
+----------------
+
+Open a terminal at the repository root:
+
+    npm run install:all
+    npm run dev
+
+Open the website:
+
+    http://localhost:5173
+
+The API runs on port 4000. The Vite website forwards /api requests to it.
+Normally, use the single "npm run dev" command to start both services.
+
+To run the services separately, use two terminals:
+
+    npm run dev:backend
+    npm run dev:frontend
+
+Do not start a second backend while one is already using port 4000. If you see
+EADDRINUSE, the port is occupied; use the already-running API or stop the
+duplicate backend terminal before starting another one. If the browser reports
+a Vite proxy error or ECONNRESET, check that the backend is running.
+
+Optional backend configuration:
+
+    Copy-Item backend\.env.example backend\.env
+
+Edit backend\.env only when needed. Never commit backend\.env or share its
+secret values. Keep the example file as the template.
+
+Useful commands from the repository root:
+
+    npm run build       Build and type-check backend and frontend
+    npm test            Run backend tests
+    npm run dev:backend Start only the API
+    npm run dev:frontend Start only the website
+
+
+3. SIGN IN AND OTP
+------------------
+
+1. Click "Sign in" and enter an Indian mobile number.
+2. Accept the terms/privacy consent and request the one-time code.
+3. In local development, the code is shown on the login screen and printed
+   in the backend terminal. Enter that code to finish signing in.
+4. A new phone number creates a regular user account automatically.
+
+Local development OTP is for testing only. Real SMS delivery is not wired up.
+Production sign-in needs an SMS provider and production secrets; do not use
+development OTP behavior for a live service.
+
+
+4. PUBLIC / GUEST FEATURES
+--------------------------
+
+You can use these without signing in:
+
+- Home page and public astrologer listings/profiles
+- Free Kundli and Kundli Matching
+- Compatibility and Tarot tools
+- Name, date, numerology and other calculators
+- Panchang pages, city timings, Muhurat screening
+- Horoscope pages, blog and festival calendar
+
+Some actions require an account, including saving Kundlis, chatting, managing
+your profile, wallet and order history.
+
+Main public pages:
+
+    /freekundli
+    /matchmaking
+    /panchang/today-panchang
+    /horoscope/daily-horoscope
+    /chat-with-astrologer
+    /astrology-blog
+    /festival
+
+
+5. CUSTOMER / REGULAR USER
+--------------------------
+
+Every new sign-in starts as a regular "user".
+
+After signing in, use the account menu for:
+
+- Profile settings: name, preferences, language, theme and birth profiles
+- Notifications
+- Wallet and recharge history
+- Order history, including chats
+- Customer support
+- Saved Kundli reports and data export/account deletion in profile settings
+
+To start a chat, open an astrologer profile and choose Chat. You can also use
+the free astrology chat page. A free chat is limited and can be used once per
+phone number. Paid chats use the wallet and show their rate before starting.
+
+The wallet is in test mode when Razorpay keys are not configured in local
+development. Test-mode top-ups are simulated; no real money is charged.
+Configure a payment provider before accepting real payments.
+
+Voice calls are not implemented yet; call options may be labelled "Call soon".
+
+
+6. ASTROLOGER
+-------------
+
+An astrologer starts with a regular user account:
+
+1. Sign in.
+2. Open /astrologer-signup.
+3. Submit the public name, biography, experience, languages, specialties,
+   skills and requested prices.
+4. Wait for a super administrator to review the application.
+5. After approval, sign out and back in if the role/menu has not refreshed.
+6. Open /astrologer-panel.
+
+The panel is used to:
+
+- Set online/offline status
+- Receive, accept or reject chat requests
+- Open active chats and view recent chat information
+- Manage weekly availability and supported prices
+- Upload a profile photo (JPEG, PNG or WebP, up to 5 MB)
+- View payout information
+
+An approved astrologer is publicly listed only when the profile is approved.
+For real profiles, online presence depends on an active connection to the
+website. Demo profiles in development may use simulated availability and
+automated replies; they are labelled as demos and are not real astrologers.
+
+Identity-document upload is not available. Voice calls and a waiting queue
+are not available.
+
+
+7. ADMIN AND ADMIN SUB-ROLES
+----------------------------
+
+Admin access is assigned by the backend phone allowlist, not by choosing a
+role on the login screen.
+
+To create a super-admin account for your own trusted phone:
+
+1. Stop the backend.
+2. In backend\.env, set ADMIN_PHONES to the trusted phone number in +91 format.
+   For multiple trusted admins, separate numbers with commas.
+3. Restart the backend.
+4. Sign in with that phone number using OTP.
+
+Example format only (replace with your own trusted number):
+
+    ADMIN_PHONES=+919876543210
+
+Never put an untrusted person's number in ADMIN_PHONES. Anyone on this list
+gets administrator access when they sign in. Removing a number removes its
+admin status on the next sign-in.
+
+Admin types:
+
+- Super admin
+  Full admin access. Can manage users and admin roles, astrologer applications,
+  dashboards, audit logs and operational tools.
+
+- Support admin
+  Handles support tickets and reviews chat reports.
+
+- Content admin
+  Manages blog posts, horoscope content and festival entries.
+
+- Finance admin
+  Handles payouts, finance reports, coupons, wallet adjustments and session
+  refund decisions.
+
+To assign a sub-role:
+
+1. First make the trusted phone an admin using ADMIN_PHONES and have that
+   person sign in.
+2. Sign in as a super admin and open /admin/users.
+3. Find the admin account and choose Support, Content or Finance in its Admin
+   role selector.
+4. Ask that admin to sign out and back in if the menu does not update.
+
+Only a super admin can assign these roles. The last active super admin cannot
+be downgraded, and an admin cannot change their own role. Admin permissions
+are also checked by the API, not only hidden in the website.
+
+Useful admin pages:
+
+    /admin                 Super-admin dashboard
+    /admin/users           Users and admin-role management
+    /admin/astrologers     Review astrologer applications
+    /admin/support         Support tickets
+    /admin/chat-reports    Chat reports
+    /admin/blog            Blog editor
+    /admin/horoscope       Horoscope editor/import
+    /admin/festivals       Festival editor
+    /admin/payouts         Payouts and finance
+    /admin/audit-logs      Admin action history
+
+The correct landing page depends on the admin role.
+
+
+8. DEVELOPMENT DATA AND IMPORTANT LIMITS
+-----------------------------------------
+
+- Local development may seed clearly labelled demo astrologers, placeholder
+  horoscope text and sample festival entries. Replace placeholders with
+  verified content before publishing.
+- Kundli/Panchang values use the conventions described on their pages. Verify
+  important calculations against a trusted regional almanac or astrologer.
+- Demo astrologers and mock payments are for development/testing only.
+- Local JSON storage is for single-instance development. Production requires
+  a properly configured database, HTTPS, strong secrets and operational
+  review.
+- Do not publish unverified festival dates or placeholder horoscope text.
+- Astrology content is guidance/reflection, not medical, legal or financial
+  advice.
+
+
+9. QUICK TROUBLESHOOTING
+------------------------
+
+Website does not open:
+  Start the frontend with npm run dev or npm run dev:frontend and open
+  http://localhost:5173.
+
+API request gets ECONNRESET or Vite proxy error:
+  Start the backend with npm run dev or npm run dev:backend. Confirm there is
+  only one backend using port 4000.
+
+Backend reports EADDRINUSE on port 4000:
+  Another API process is already using that port. Do not start another copy;
+  use the running API or stop the duplicate backend terminal first.
+
+New admin role is not visible:
+  Confirm the phone is in ADMIN_PHONES, restart the backend after changing
+  backend\.env, then sign out and sign in again.
+
+Astrologer approval is not visible:
+  Confirm the application was approved by a super admin, then refresh or sign
+  out and sign in again.
+
+OTP does not arrive:
+  In development, check the website login screen and backend terminal. In
+  production, real SMS delivery must be configured; it is not included yet.
+

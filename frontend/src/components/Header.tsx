@@ -10,6 +10,20 @@ import type { SessionView } from '../chat/types'
 import { api } from '../services/api'
 const ACCOUNT_MENU = '__account'
 
+function JyotivaMark() {
+  return (
+    <span className="logo-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 40" focusable="false">
+        <defs><linearGradient id="jyotiva-mark-bg" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#49345f" /><stop offset="1" stopColor="#241932" /></linearGradient></defs>
+        <rect x="1" y="1" width="38" height="38" rx="13" fill="url(#jyotiva-mark-bg)" />
+        <circle cx="20" cy="20" r="14.2" fill="none" stroke="#f5d77e" strokeOpacity=".42" />
+        <path d="M20 10.3v2.1m0 15.2v2.1m9.7-9.7h-2.1m-15.2 0h-2.1m16.57-6.87-1.48 1.48m-10.74 10.74-1.48 1.48m13.7 0-1.48-1.48m-10.74-10.74-1.48-1.48" stroke="#f5d77e" strokeWidth="1.35" strokeLinecap="round" />
+        <circle cx="20" cy="20" r="5.3" fill="#f5d77e" /><circle cx="20" cy="20" r="2.1" fill="#49345f" />
+      </svg>
+    </span>
+  )
+}
+
 function AstrologerPanelLink({ className = '' }: { className?: string }) {
   const { user } = useAuth()
   const [items, setItems] = useState<SessionView[] | null>(null)
@@ -128,25 +142,7 @@ export default function Header() {
           </button>
         </nav>
         <Link to="/" className="logo" onClick={close} aria-label={`${BRAND} home`}>
-          <span className="logo-mark" aria-hidden="true">
-            <svg viewBox="0 0 40 40" role="presentation" focusable="false">
-              <defs>
-                <linearGradient id="jyotiva-mark-bg" x1="0" y1="0" x2="1" y2="1">
-                  <stop stopColor="#3a2854" />
-                  <stop offset="1" stopColor="#21152f" />
-                </linearGradient>
-                <linearGradient id="jyotiva-mark-flame" x1="0" y1="0" x2="1" y2="1">
-                  <stop stopColor="#fff0ad" />
-                  <stop offset="1" stopColor="#efa92b" />
-                </linearGradient>
-              </defs>
-              <circle cx="20" cy="20" r="19" fill="url(#jyotiva-mark-bg)" />
-              <circle cx="20" cy="20" r="17.5" fill="none" stroke="#e8c66f" strokeOpacity=".55" />
-              <path d="M20 8.3c-1.6 3.5-4.1 5.4-4.1 8.7a4.1 4.1 0 0 0 8.2 0c0-3.3-2.5-5.2-4.1-8.7Z" fill="url(#jyotiva-mark-flame)" />
-              <path d="M12 21.3c2.1 1.2 4.7 1.5 8 .1 3.3 1.4 5.9 1.1 8-.1M13.8 23.4c.8 3.5 3.1 5.6 6.2 5.6s5.4-2.1 6.2-5.6M17 31h6" fill="none" stroke="#f4d57c" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M20 6v-1.5M11 12l-1.2-1M29 12l1.2-1" fill="none" stroke="#f4d57c" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-          </span>
+          <JyotivaMark />
           <span className="logo-word">{BRAND}</span>
         </Link>
         <div className="hdr-actions">
@@ -179,7 +175,7 @@ export default function Header() {
         <aside className="drawer" id="site-drawer" role="dialog" aria-modal="true" aria-label="Explore Jyotiva">
           <div className="drawer-head">
             <Link to="/" className="logo" onClick={close} aria-label={`${BRAND} home`}>
-              <span className="logo-mark" aria-hidden="true">✦</span><span className="logo-word">{BRAND}</span>
+              <JyotivaMark /><span className="logo-word">{BRAND}</span>
             </Link>
             <button ref={closeMenuRef} className="icon-btn drawer-close" onClick={close} aria-label="Close menu">✕</button>
           </div>
